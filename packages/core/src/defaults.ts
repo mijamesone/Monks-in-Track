@@ -63,6 +63,8 @@ export const DEFAULT_SETTINGS = {
   pomodoro: { focus: 25, shortBreak: 5, longBreak: 15 },
   report: { includeFocusLine: true, mergeGroups: true, revisionsSection: false },
   backup: { folder: null as string | null, keepDays: 30, time: '12:00' },
+  /** Days per calendar year, entered by hand in Settings (decision R12). Missing = not tracked. */
+  leaveAllowance: {} as Partial<Record<'sick' | 'annual' | 'alter' | 'earned', number>>,
   autoLockMinutes: 30,
 } as const;
 

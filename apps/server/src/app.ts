@@ -17,6 +17,7 @@ import * as S from './services/structure.ts';
 import * as T from './services/time.ts';
 import * as W from './services/workday.ts';
 import * as R from './services/reports.ts';
+import * as C from './services/catalog.ts';
 import { analytics } from './services/analytics.ts';
 import { backupNow } from './services/backup.ts';
 
@@ -222,6 +223,46 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
     c.json(R.recordReport(ctx, await body(c, z.object({ type: reportType, workdayId: id.nullable(), generatedText: z.string().max(50_000), finalText: z.string().max(50_000), via: z.enum(['copy', 'discord']) }))), 201),
   );
   app.get('/api/reports', (c) => c.json(R.reportHistory(ctx, Number(c.req.query('limit') ?? 50))));
+
+  // ── editable lists (Settings) ──
+  const named = z.object({ name: z.string().min(1).max(120) });
+  const archivable = z.object({ name: z.string().min(1).max(120).optional(), archived: z.boolean().optional() });
+  const ids = z.object({ ids: z.array(id).min(1) });
+  app.post('/api/categories', async (c) => c.json(C.createCategory(ctx, await body(c, named)), 201));
+  app.patch('/api/categories/:id', async (c) => c.json(C.updateCategory(ctx, c.req.param('id'), await body(c, archivable))));
+  app.put('/api/categories/order', async (c) => c.json(C.reorderCategories(ctx, (await body(c, ids)).ids)));
+  const statusFields = {
+    emoji: z.string().max(16).optional(),
+    reportText: z.string().max(60).optional(),
+    color: z.string().max(32).nullable().optional(),
+    isDone: z.boolean().optional(),
+    isRejected: z.boolean().optional(),
+  };
+  app.post('/api/statuses', async (c) => c.json(C.createStatus(ctx, await body(c, z.object({ name: z.string().min(1).max(60), ...statusFields }))), 201));
+  app.patch('/api/statuses/:id', async (c) => c.json(C.updateStatus(ctx, c.req.param('id'), await body(c, z.object({ name: z.string().min(1).max(60).optional(), ...statusFields })))));
+  app.put('/api/statuses/order', async (c) => c.json(C.reorderStatuses(ctx, (await body(c, ids)).ids)));
+  app.delete('/api/statuses/:id', (c) => c.json(C.deleteStatus(ctx, c.req.param('id'))));
+  app.post('/api/project-types', async (c) => c.json(C.createProjectType(ctx, await body(c, named)), 201));
+  app.patch('/api/project-types/:id', async (c) => c.json(C.updateProjectType(ctx, c.req.param('id'), await body(c, archivable))));
+  app.post('/api/tags', async (c) => c.json(C.createTag(ctx, await body(c, named.extend({ color: z.string().max(32).nullable().optional() }))), 201));
+  app.patch('/api/tags/:id', async (c) => c.json(C.updateTag(ctx, c.req.param('id'), await body(c, z.object({ name: z.string().min(1).max(120).optional(), color: z.string().max(32).nullable().optional() })))));
+  app.delete('/api/tags/:id', (c) => c.json(C.deleteTag(ctx, c.req.param('id'))));
+  const tagNames = z.object({ names: z.array(z.string().max(120)).max(50) });
+  app.put('/api/projects/:id/tags', async (c) => c.json(C.setTags(ctx, { kind: 'project', id: c.req.param('id') }, (await body(c, tagNames)).names)));
+  app.put('/api/tasks/:id/tags', async (c) => c.json(C.setTags(ctx, { kind: 'task', id: c.req.param('id') }, (await body(c, tagNames)).names)));
+  app.get('/api/projects/:id/tags', (c) => c.json(C.tagsOf(ctx, { kind: 'project', id: c.req.param('id') })));
+  app.get('/api/tasks/:id/tags', (c) => c.json(C.tagsOf(ctx, { kind: 'task', id: c.req.param('id') })));
+  app.post('/api/report-groups', async (c) => c.json(C.createReportGroup(ctx, await body(c, z.object({ label: z.string().min(1).max(120), projectIds: z.array(id).optional() }))), 201));
+  app.patch('/api/report-groups/:id', async (c) => c.json(C.updateReportGroup(ctx, c.req.param('id'), await body(c, z.object({ label: z.string().min(1).max(120).optional() })))));
+  app.delete('/api/report-groups/:id', (c) => c.json(C.deleteReportGroup(ctx, c.req.param('id'))));
+  const leaveType = z.enum(['sick', 'annual', 'alter', 'earned']);
+  app.get('/api/leave', (c) => c.json(C.listLeave(ctx, { from: c.req.query('from'), to: c.req.query('to') })));
+  app.post('/api/leave', async (c) => c.json(C.addLeave(ctx, await body(c, z.object({ from: date, to: date.optional(), type: leaveType, halfDay: z.boolean().optional(), note: z.string().max(500).nullable().optional() }))), 201));
+  app.delete('/api/leave/:date', (c) => c.json(C.removeLeave(ctx, date.parse(c.req.param('date')))));
+  app.get('/api/leave/usage', (c) => {
+    const year = z.coerce.number().int().min(2000).max(2100).parse(c.req.query('year') ?? new Date(ctx.now()).getFullYear());
+    return c.json(C.leaveUsage(ctx, year, S.getSettings(ctx).leaveAllowance));
+  });
 
   // ── analytics and backup ──
   app.get('/api/analytics', (c) => {

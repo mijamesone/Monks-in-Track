@@ -11,6 +11,7 @@ import {
   subtreeIds,
   taskTotals,
   MINUTE,
+  DEFAULT_SETTINGS,
   type Settings,
 } from '@monkstracker/core';
 import { ConflictError, NotFoundError, type Ctx } from '../lib/context.ts';
@@ -33,7 +34,8 @@ type Row = Record<string, unknown>;
 export function getSettings(ctx: Ctx): Settings {
   const row = ctx.db.prepare(`SELECT value FROM settings WHERE key = 'app'`).get() as { value: string } | undefined;
   if (!row) throw new NotFoundError('Settings');
-  return JSON.parse(row.value) as Settings;
+  // Merge over defaults so settings added in later versions always exist.
+  return { ...DEFAULT_SETTINGS, ...(JSON.parse(row.value) as Partial<Settings>) } as Settings;
 }
 
 /** Shallow-merges known keys only; unknown keys are ignored so a typo cannot pollute settings. */
