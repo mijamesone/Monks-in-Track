@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+# Local data never belongs in the repository
+data/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+backups/
+secrets/

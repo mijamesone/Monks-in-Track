@@ -1,0 +1,10 @@
+{
+  "name": "@monkstracker/core",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pure business rules shared by the server, web app and future desktop app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

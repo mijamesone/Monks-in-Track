@@ -1,0 +1,23 @@
+{
+  "name": "monkstracker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Personal, local-first work command centre: projects, tasks, time tracking, workdays and office reports.",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/core && tsc -p apps/server",
+    "dev:server": "pnpm --filter @monkstracker/server dev",
+    "seed:sample": "pnpm --filter @monkstracker/server seed:sample"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
