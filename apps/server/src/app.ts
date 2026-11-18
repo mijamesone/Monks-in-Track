@@ -88,6 +88,7 @@ export interface AppOptions {
 export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   const app = new Hono();
   const hosts = new Set(opts.allowedHosts ?? ['127.0.0.1', 'localhost']);
+  const anyHost = hosts.has('*');
   const sessions = new Sessions(() => S.getSettings(ctx).autoLockMinutes * MINUTE);
 
   app.onError((err, c) => {
@@ -103,7 +104,7 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
 
   app.use('*', async (c, next) => {
     const host = (c.req.header('host') ?? '').replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
-    if (!hosts.has(host)) return c.json({ error: { code: 'bad_host', message: 'Unknown host.' } }, 403);
+    if (!anyHost && !hosts.has(host)) return c.json({ error: { code: 'bad_host', message: 'Unknown host.' } }, 403);
     const method = c.req.method;
     if (method !== 'GET' && method !== 'HEAD' && c.req.header('x-monkstracker') !== '1') {
       return c.json({ error: { code: 'missing_header', message: 'Requests that change data must send X-MonksTracker: 1.' } }, 403);

@@ -24,7 +24,12 @@ seedDefaults(db, ctx.now());
 
 // The built web app, if present (pnpm build). Override with MONKSTRACKER_WEB.
 const webRoot = resolve(process.env.MONKSTRACKER_WEB ?? join(process.cwd(), 'apps', 'web', 'dist'));
-const app = createApp(ctx, { webRoot: existsSync(join(webRoot, 'index.html')) ? webRoot : undefined });
+// Extra Host names, comma-separated, e.g. for a cloud preview: MONKSTRACKER_ALLOWED_HOSTS='*'. Default: local only.
+const extraHosts = (process.env.MONKSTRACKER_ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim()).filter(Boolean);
+const app = createApp(ctx, {
+  webRoot: existsSync(join(webRoot, 'index.html')) ? webRoot : undefined,
+  allowedHosts: ['127.0.0.1', 'localhost', ...extraHosts],
+});
 const stopScheduler = startScheduler(ctx);
 const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port }, (info) => {
   console.log(`MonksTracker on http://127.0.0.1:${info.port}  (data: ${dataDir}${existsSync(join(webRoot, 'index.html')) ? '' : ', web app not built'})`);

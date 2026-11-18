@@ -42,7 +42,11 @@ MONKSTRACKER_DATA=./sample-data pnpm --filter @monkstracker/server seed:sample
 `MONKSTRACKER_DATA` if set, else `%LOCALAPPDATA%\MonksTracker` on Windows, else `~/.monkstracker`.
 The database is `monkstracker.sqlite`; set a backup folder in Settings for the automatic daily copy.
 
-## Windows: start with Windows
+## Windows: install on your PC
+
+Step-by-step guide: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md).
+
+### Start with Windows
 
 After `pnpm install` and `pnpm build`, from the repository folder:
 
