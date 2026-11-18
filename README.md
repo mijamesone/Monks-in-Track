@@ -10,7 +10,7 @@ The full product specification lives in the shared MonksTracker spec document; t
 | --- | --- |
 | `packages/core` | Pure business rules with no I/O: time totals, timer transitions, workday and balance maths, Huly link parsing, estimate parsing, completion %, Discord report generator, first-run defaults |
 | `apps/server` | Local server on 127.0.0.1 with the SQLite database, migrations and the HTTP API |
-| `apps/web` | The React app (after the design direction is set) |
+| `apps/web` | The React app: Direction A "Clean Studio" design tokens, app shell, timer bar, dashboard |
 
 ## Requirements
 
@@ -25,8 +25,11 @@ pnpm test          # all unit and integration tests
 pnpm typecheck     # strict TypeScript checks
 pnpm build         # single-file server at apps/server/dist/server.mjs
 pnpm start         # run the built server on http://127.0.0.1:4545
-pnpm dev:server    # run from source with reload
+pnpm dev:server    # run the server from source with reload (port 4545)
+pnpm dev:web       # run the web app with hot reload on http://127.0.0.1:5173 (talks to the dev server)
 ```
+
+After `pnpm build`, the server also serves the app itself, so everything lives at http://127.0.0.1:4545.
 
 Sample data for building screens (never mixed into real data; refuses a database that already has projects):
 
@@ -49,6 +52,15 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\install-autostart.ps1
 
 This adds a hidden-window launcher to your Startup folder and starts the server now.
 Remove it with `scripts\windows\uninstall-autostart.ps1` (your data is not touched).
+
+## Design
+
+Direction A, "Clean Studio": white and its shades as the base, colour only as accents with a meaning
+(Designmonks purple for actions and focus, mint for done and running, lime and amber as fills with dark text).
+All tokens live in `apps/web/src/styles/tokens.css`, in light and dark. The theme follows the time of day
+(Settings › theme: `auto`, `light` or `dark`). Fonts and icons are bundled, so the app works offline.
+
+![Dashboard, morning](docs/screenshots/dashboard-morning.png)
 
 ## Rules that the code guarantees
 

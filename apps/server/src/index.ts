@@ -6,8 +6,8 @@
  * Binds to 127.0.0.1 only, so nothing outside this computer can connect.
  */
 import { serve } from '@hono/node-server';
-import { mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { createApp } from './app.ts';
 import { openDatabase, seedDefaults } from './db/index.ts';
 import { makeCtx } from './lib/context.ts';
@@ -22,10 +22,12 @@ const db = openDatabase(join(dataDir, 'monkstracker.sqlite'));
 const ctx = makeCtx(db);
 seedDefaults(db, ctx.now());
 
-const app = createApp(ctx);
+// The built web app, if present (pnpm build). Override with MONKSTRACKER_WEB.
+const webRoot = resolve(process.env.MONKSTRACKER_WEB ?? join(process.cwd(), 'apps', 'web', 'dist'));
+const app = createApp(ctx, { webRoot: existsSync(join(webRoot, 'index.html')) ? webRoot : undefined });
 const stopScheduler = startScheduler(ctx);
 const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port }, (info) => {
-  console.log(`MonksTracker server on http://127.0.0.1:${info.port}  (data: ${dataDir})`);
+  console.log(`MonksTracker on http://127.0.0.1:${info.port}  (data: ${dataDir}${existsSync(join(webRoot, 'index.html')) ? '' : ', web app not built'})`);
 });
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {

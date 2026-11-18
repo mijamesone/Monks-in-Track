@@ -7,6 +7,8 @@
  *    that header without a CORS preflight, which this server never approves, so other sites cannot write here.
  *  - With a PIN set, /api requires an unlocked session cookie.
  */
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { extname, join, normalize } from 'node:path';
 import { Hono, type Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { z } from 'zod';
@@ -62,9 +64,25 @@ const taskCreate = z.object({ projectId: id, parentId: id.nullable().optional(),
 const taskPatch = z.object({ name: z.string().min(1).max(500).optional(), sortOrder: z.number().optional(), archived: z.boolean().optional(), ...taskFields });
 const target = z.object({ projectId: id.nullable(), taskId: id.nullable(), kind: z.enum(['work', 'revision', 'meeting']).default('work'), revisionRoundId: id.nullable().optional() });
 
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.mp3': 'audio/mpeg',
+  '.webmanifest': 'application/manifest+json',
+};
+
 export interface AppOptions {
   /** Hostnames accepted in the Host header. */
   allowedHosts?: string[];
+  /** Folder of the built web app; when set, it is served at / with a single-page-app fallback. */
+  webRoot?: string;
 }
 
 export function createApp(ctx: Ctx, opts: AppOptions = {}) {
@@ -157,7 +175,7 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   );
 
   // ── timer ──
-  app.get('/api/timer', (c) => c.json({ running: T.runningTimer(ctx), break: T.runningBreak(ctx), review: T.timerReview(ctx), now: ctx.now() }));
+  app.get('/api/timer', (c) => c.json(T.timerState(ctx)));
   app.post('/api/timer/start', async (c) => {
     const b = await body(c, target.extend({ startWorkday: z.boolean().optional() }));
     const { startWorkday, ...t } = b;
@@ -270,6 +288,23 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
     return c.json(analytics(ctx, q));
   });
   app.post('/api/backup', async (c) => c.json(await backupNow(ctx)));
+
+  if (opts.webRoot) {
+    const root = opts.webRoot;
+    const index = join(root, 'index.html');
+    app.get('*', async (c, next) => {
+      if (c.req.path.startsWith('/api/')) return next();
+      const rel = normalize(decodeURIComponent(c.req.path)).replace(/^([/\\])+/, '');
+      const file = join(root, rel);
+      // Never serve anything outside the web folder.
+      const safe = file.startsWith(root) && existsSync(file) && statSync(file).isFile();
+      const target = safe ? file : index;
+      if (!existsSync(target)) return next();
+      const type = MIME[extname(target).toLowerCase()] ?? 'application/octet-stream';
+      const cache = target === index ? 'no-cache' : 'public, max-age=31536000, immutable';
+      return c.body(readFileSync(target), 200, { 'content-type': type, 'cache-control': cache });
+    });
+  }
 
   app.notFound((c) => c.json({ error: { code: 'not_found', message: 'No such endpoint.' } }, 404));
   return app;

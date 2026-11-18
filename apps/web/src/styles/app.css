@@ -1,0 +1,104 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Expose the tokens to Tailwind utilities (bg-surface, text-text-2, rounded-card, font-head …). */
+@theme inline {
+  --color-canvas: var(--mt-canvas);
+  --color-surface: var(--mt-surface);
+  --color-surface-2: var(--mt-surface-2);
+  --color-sunken: var(--mt-sunken);
+  --color-line: var(--mt-border);
+  --color-divider: var(--mt-divider);
+  --color-text: var(--mt-text);
+  --color-text-2: var(--mt-text-2);
+  --color-text-3: var(--mt-text-3);
+  --color-accent: var(--mt-accent);
+  --color-on-accent: var(--mt-on-accent);
+  --color-accent-ink: var(--mt-accent-ink);
+  --color-accent-strong: var(--mt-accent-strong);
+  --color-accent-soft: var(--mt-accent-soft);
+  --color-mint: var(--mt-mint);
+  --color-lime: var(--mt-lime);
+  --color-amber: var(--mt-amber);
+  --color-on-fill: var(--mt-on-fill);
+  --color-danger: var(--mt-danger);
+  --color-danger-soft: var(--mt-danger-soft);
+  --color-live: var(--mt-live-bg);
+  --color-on-live: var(--mt-live-fg);
+  --color-bar: var(--mt-bar);
+  --color-nav-active: var(--mt-nav-active-bg);
+  --color-on-nav-active: var(--mt-nav-active-fg);
+
+  --radius-card: var(--mt-radius);
+  --radius-field: var(--mt-radius-sm);
+  --radius-frame: var(--mt-radius-lg);
+
+  --font-sans: var(--mt-font-body);
+  --font-head: var(--mt-font-head);
+  --font-moment: var(--mt-font-moment);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--mt-canvas);
+  color: var(--mt-text);
+  font-family: var(--mt-font-body);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color var(--mt-theme-fade) ease,
+    color var(--mt-theme-fade) ease;
+}
+
+/* Surfaces fade together when the theme changes with the time of day. */
+.mt-themed {
+  transition:
+    background-color var(--mt-theme-fade) ease,
+    border-color var(--mt-theme-fade) ease,
+    color var(--mt-theme-fade) ease;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--mt-focus);
+  border-radius: var(--mt-radius-sm);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes mt-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(44, 250, 146, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(44, 250, 146, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(44, 250, 146, 0);
+  }
+}
+
+.mt-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mt-mint);
+  animation: mt-pulse 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

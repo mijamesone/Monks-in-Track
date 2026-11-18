@@ -66,6 +66,8 @@ export const DEFAULT_SETTINGS = {
   /** Days per calendar year, entered by hand in Settings (decision R12). Missing = not tracked. */
   leaveAllowance: {} as Partial<Record<'sick' | 'annual' | 'alter' | 'earned', number>>,
   autoLockMinutes: 30,
+  /** Direction A, Clean Studio. 'auto' = light by day, dark from `darkFrom` (times are placeholders until decided). */
+  theme: { mode: 'auto' as 'auto' | 'light' | 'dark', lightFrom: '06:00', darkFrom: '18:00' },
 } as const;
 
 export type Settings = typeof DEFAULT_SETTINGS;

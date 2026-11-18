@@ -450,3 +450,58 @@ export function startWorkdayInternal(ctx: Ctx, checkInAt: number): string {
 }
 
 export const _internals = { getState, setState };
+
+// ───────────────────────── timer state for the app ─────────────────────────
+
+/** Names the app needs to label an entry (project, task, company, Huly link, estimate). */
+export function entryContext(ctx: Ctx, e: Entry | null) {
+  if (!e) return null;
+  const project = e.projectId
+    ? (ctx.db.prepare(`SELECT id, name, report_name, company_id, huly_url FROM projects WHERE id = ?`).get(e.projectId) as Row | undefined)
+    : undefined;
+  const task = e.taskId
+    ? (ctx.db.prepare(`SELECT id, name, huly_url, huly_key, estimate_minutes FROM tasks WHERE id = ?`).get(e.taskId) as Row | undefined)
+    : undefined;
+  const round = e.revisionRoundId
+    ? (ctx.db.prepare(`SELECT number, title FROM revision_rounds WHERE id = ?`).get(e.revisionRoundId) as Row | undefined)
+    : undefined;
+  return {
+    projectName: project ? String(project.name) : null,
+    companyId: project ? String(project.company_id) : null,
+    taskName: task ? String(task.name) : null,
+    hulyKey: task?.huly_key ? String(task.huly_key) : null,
+    hulyUrl: task?.huly_url ? String(task.huly_url) : project?.huly_url ? String(project.huly_url) : null,
+    estimateMinutes: task?.estimate_minutes === null || task?.estimate_minutes === undefined ? null : Number(task.estimate_minutes),
+    revision: round ? { number: Number(round.number), title: String(round.title) } : null,
+    /** Time already spent on this task before the running entry, for the estimate countdown. */
+    priorMs: e.taskId
+      ? Number(
+          (ctx.db
+            .prepare(`SELECT COALESCE(SUM(ended_at - started_at), 0) AS ms FROM time_entries WHERE task_id = ? AND ended_at IS NOT NULL AND id <> ? AND kind IN ('work', 'revision', 'meeting')`)
+            .get(e.taskId, e.id) as { ms: number }).ms,
+        )
+      : 0,
+  };
+}
+
+/** Everything the timer bar shows in one call. */
+export function timerState(ctx: Ctx) {
+  const running = runningTimer(ctx);
+  const brk = runningBreak(ctx);
+  const last = running
+    ? null
+    : ((ctx.db
+        .prepare(`SELECT * FROM time_entries WHERE ended_at IS NOT NULL AND kind IN ('work', 'revision', 'meeting') ORDER BY ended_at DESC LIMIT 1`)
+        .get() as Row | undefined) ?? null);
+  const lastEntry = last ? mapEntry(last) : null;
+  return {
+    now: ctx.now(),
+    running,
+    runningContext: entryContext(ctx, running),
+    break: brk,
+    lastStopped: lastEntry,
+    lastStoppedContext: entryContext(ctx, lastEntry),
+    review: timerReview(ctx),
+    workdayId: openWorkdayId(ctx),
+  };
+}

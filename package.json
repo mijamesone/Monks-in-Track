@@ -11,10 +11,11 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/core && tsc -p apps/server",
+    "typecheck": "tsc -p packages/core && tsc -p apps/server && tsc -p apps/web",
     "dev:server": "pnpm --filter @monkstracker/server dev",
-    "build": "pnpm --filter @monkstracker/server build",
-    "start": "node apps/server/dist/server.mjs"
+    "build": "pnpm --filter @monkstracker/web build && pnpm --filter @monkstracker/server build",
+    "start": "node apps/server/dist/server.mjs",
+    "dev:web": "pnpm --filter @monkstracker/web dev"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

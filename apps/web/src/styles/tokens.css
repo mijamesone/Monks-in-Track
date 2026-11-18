@@ -1,0 +1,137 @@
+/*
+ * MonksTracker design tokens — Direction A, "Clean Studio".
+ * White and its shades are the base; colour appears only as accents with a meaning.
+ * Palette from designmonks.co. Contrast notes are for text on the matching surface.
+ */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Base: white and its shades */
+  --mt-canvas: #ffffff;
+  --mt-surface: #ffffff;
+  --mt-surface-2: #fafafa;
+  --mt-sunken: #f5f5f5;
+  --mt-border: #e5e5e5;
+  --mt-divider: #f0f0f0;
+  --mt-text: #0a0a0a;
+  --mt-text-2: #525252; /* 7.8:1 */
+  --mt-text-3: #737373; /* 4.7:1 */
+
+  /* Purple: the one strong accent (5.2:1 on white, white text on it 5.2:1) */
+  --mt-accent: #7d40ff;
+  --mt-on-accent: #ffffff;
+  --mt-accent-ink: #7d40ff;
+  --mt-accent-strong: #592db5;
+  --mt-accent-soft: #f2edff;
+  --mt-nav-active-bg: #f2edff;
+  --mt-nav-active-fg: #592db5;
+  --mt-focus: 0 0 0 3px rgba(125, 64, 255, 0.35);
+
+  /* Fill-only accents: always dark text on them */
+  --mt-mint: #2cfa92;
+  --mt-lime: #d8ff84;
+  --mt-amber: #f7bb48;
+  --mt-on-fill: #0a0a0a;
+  --mt-danger: #dc2626;
+  --mt-danger-soft: #fee2e2;
+
+  /* Status chips (soft tints) */
+  --mt-chip-todo-bg: #f5f5f5;
+  --mt-chip-todo-fg: #525252;
+  --mt-chip-progress-bg: #f2edff;
+  --mt-chip-progress-fg: #592db5;
+  --mt-chip-review-bg: #fef9c3;
+  --mt-chip-review-fg: #854d0e;
+  --mt-chip-revision-bg: #f3ffd6;
+  --mt-chip-revision-fg: #4d6b00;
+  --mt-chip-done-bg: #eafff4;
+  --mt-chip-done-fg: #12693d;
+  --mt-chip-rejected-bg: #fee2e2;
+  --mt-chip-rejected-fg: #991b1b;
+  --mt-chip-hold-bg: #f5f5f5;
+  --mt-chip-hold-fg: #525252;
+  --mt-chip-blocked-bg: #fee2e2;
+  --mt-chip-blocked-fg: #b91c1c;
+
+  --mt-live-bg: #eafff4;
+  --mt-live-fg: #12693d;
+  --mt-bar: #f5f5f5;
+
+  /* Company colours (graphics only; 3:1 or more on white) */
+  --mt-company-1: #7d40ff;
+  --mt-company-2: #188a50;
+
+  /* Shape */
+  --mt-radius-lg: 20px;
+  --mt-radius: 14px;
+  --mt-radius-sm: 10px;
+  --mt-shadow: none;
+  --mt-overlay: rgba(10, 10, 10, 0.32);
+
+  /* Type */
+  --mt-font-body: 'Outfit Variable', Outfit, Arial, sans-serif;
+  --mt-font-head: 'Red Hat Display Variable', 'Red Hat Display', Arial, sans-serif;
+  --mt-font-moment: 'Playfair Display', Georgia, serif;
+
+  /* Motion: expressive, but every animation honours "reduce motion" */
+  --mt-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mt-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mt-dur-fast: 140ms;
+  --mt-dur: 240ms;
+  --mt-dur-slow: 400ms;
+  --mt-theme-fade: 600ms;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --mt-canvas: #0a0a0a;
+  --mt-surface: #171717;
+  --mt-surface-2: #1f1f1f;
+  --mt-sunken: #141414;
+  --mt-border: #2a2a2a;
+  --mt-divider: #232323;
+  --mt-text: #fafafa;
+  --mt-text-2: #d4d4d4;
+  --mt-text-3: #a3a3a3;
+
+  --mt-accent: #7d40ff;
+  --mt-on-accent: #ffffff;
+  --mt-accent-ink: #c3a7ff;
+  --mt-accent-strong: #d7c4ff;
+  --mt-accent-soft: #241249;
+  --mt-nav-active-bg: #241249;
+  --mt-nav-active-fg: #d7c4ff;
+  --mt-focus: 0 0 0 3px rgba(195, 167, 255, 0.45);
+
+  --mt-danger: #f87171;
+  --mt-danger-soft: #450a0a;
+
+  --mt-chip-todo-bg: #262626;
+  --mt-chip-todo-fg: #d4d4d4;
+  --mt-chip-progress-bg: #241249;
+  --mt-chip-progress-fg: #d7c4ff;
+  --mt-chip-review-bg: #422006;
+  --mt-chip-review-fg: #fde047;
+  --mt-chip-revision-bg: #2a3a05;
+  --mt-chip-revision-fg: #d8ff84;
+  --mt-chip-done-bg: #0b4227;
+  --mt-chip-done-fg: #9efdcd;
+  --mt-chip-rejected-bg: #450a0a;
+  --mt-chip-rejected-fg: #fca5a5;
+  --mt-chip-hold-bg: #262626;
+  --mt-chip-hold-fg: #d4d4d4;
+  --mt-chip-blocked-bg: #450a0a;
+  --mt-chip-blocked-fg: #fca5a5;
+
+  --mt-live-bg: #0b4227;
+  --mt-live-fg: #9efdcd;
+  --mt-bar: #262626;
+
+  --mt-company-1: #9766ff;
+  --mt-company-2: #2cfa92;
+
+  --mt-overlay: rgba(0, 0, 0, 0.6);
+}
