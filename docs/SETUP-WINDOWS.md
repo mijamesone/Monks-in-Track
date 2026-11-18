@@ -47,6 +47,15 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\install-autostart.ps1
 You should see "MonksTracker is running at http://127.0.0.1:4545". Open that address in Chrome.
 Tip: in Chrome's menu choose **Cast, save and share → Install page as app** to give MonksTracker its own window and taskbar icon.
 
+## 4. Two things to set right after installing
+
+1. **Backups.** Settings → Backups → choose a folder, ideally one inside OneDrive or Google Drive, for example
+   `C:\Users\you\OneDrive\MonksTracker Backups`. Press **Save**, then **Back up now**. Until a folder is chosen, no daily backups are made.
+2. **PIN (optional).** Settings → Security (PIN). Without a PIN, anyone using your Windows account can open MonksTracker.
+
+Then do the three checks from `docs/ACCEPTANCE.md` that need a real PC: put the PC to sleep with a timer running and wake it,
+make sure a backup file appears in your folder, and open the app with Wi-Fi off.
+
 ## Updating to a new version
 
 ```powershell
