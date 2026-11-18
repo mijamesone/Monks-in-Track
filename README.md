@@ -10,7 +10,9 @@ The full product specification lives in the shared MonksTracker spec document; t
 | --- | --- |
 | `packages/core` | Pure business rules with no I/O: time totals, timer transitions, workday and balance maths, Huly link parsing, estimate parsing, completion %, Discord report generator, first-run defaults |
 | `apps/server` | Local server on 127.0.0.1 with the SQLite database, migrations and the HTTP API |
-| `apps/web` | The React app: Direction A "Clean Studio" design tokens, app shell, timer bar, dashboard |
+| `apps/web` | The React app: Direction A "Clean Studio" design tokens, app shell, timer bar, dashboard, projects, time, workday wizards, reports |
+| `e2e` | Browser tests that drive the real app on a fresh sample database |
+| `docs/FEATURES.md` | Every feature, where it sits on screen, and which test covers it (the checklist for the design phase) |
 
 ## Requirements
 
@@ -28,6 +30,16 @@ pnpm start         # run the built server on http://127.0.0.1:4545
 pnpm dev:server    # run the server from source with reload (port 4545)
 pnpm dev:web       # run the web app with hot reload on http://127.0.0.1:5173 (talks to the dev server)
 ```
+
+Browser tests (after `pnpm build`; each suite starts its own server on a fresh sample database, so your real data is never touched):
+
+```bash
+pnpm e2e                    # every suite
+pnpm e2e m4                 # only suites whose file name contains "m4"
+pnpm e2e --shots=./shots    # also save screenshots, including one for each failing step
+```
+
+They need Playwright with Chromium (`pnpm add -D -w playwright` and `pnpm exec playwright install chromium` once). One step waits for the lunch alarm, so a full run takes about two minutes.
 
 After `pnpm build`, the server also serves the app itself, so everything lives at http://127.0.0.1:4545.
 

@@ -5,7 +5,8 @@ import { Button, Card, Chip, CompanyDot, EmptyState, Label, StatusChip, companyC
 import { useStartTimer } from '../lib/actions.ts';
 import { useCompany } from '../lib/company.tsx';
 import { clock, duration, greeting, longDate, signedMinutes, timeOfDay, MINUTE } from '../lib/format.ts';
-import { useAction, useCatalog, useNow, useProjects, useTimer, useToday, useWorkday } from '../lib/queries.ts';
+import { useAction, useCatalog, useNow, useProjects, useReports, useTimer, useToday, useWorkday } from '../lib/queries.ts';
+import { CheckInEditor, useWorkdayFlows } from '../components/WorkdayFlows.tsx';
 import type { ProjectSummary, Task, WorkdaySummary } from '../lib/types.ts';
 
 const enter = { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 }, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } };
@@ -46,17 +47,16 @@ function useProjectMap() {
 }
 
 function BeforeWork({ carryOver }: { carryOver: Task[] }) {
-  const startDay = useAction<Record<string, never>, unknown>('/api/workday/start');
+  const flows = useWorkdayFlows();
   return (
     <>
       <Card className="flex flex-col items-start gap-4 p-7">
         <p className="m-0 max-w-xl text-[15px] text-text-2">
-          Start your workday to record your check-in time. The full morning flow, with today's focus and the Discord message, comes in the next milestone.
+          Start Workday records your check-in time right away, then helps you carry over unfinished work, pick today's focus, note a blocker and copy your morning message.
         </p>
-        <Button variant="primary" size="lg" onClick={() => startDay.mutate({})} disabled={startDay.isPending}>
+        <Button variant="primary" size="lg" onClick={flows.openStart}>
           Start Workday
         </Button>
-        {startDay.error && <span className="text-sm text-danger">{startDay.error.message}</span>}
       </Card>
       <FocusList title="Carried over from yesterday" tasks={carryOver} emptyText="Nothing unfinished from yesterday." />
     </>
@@ -67,15 +67,12 @@ function DuringWork({ now }: { now: number }) {
   const today = useToday();
   const workday = useWorkday();
   const timer = useTimer();
-  const endDay = useAction<{ running?: { action: 'stop_now' } }, unknown>('/api/workday/end');
+  const flows = useWorkdayFlows();
   const wd = workday.data?.workday;
+  const morning = useReports({ workdayId: wd?.workday.id, type: 'morning', limit: 1 }, !!wd);
   const running = timer.data?.running ?? null;
   const tracked = (wd?.trackedMs ?? 0) + (running ? Math.max(0, now - Math.max(running.startedAt, timer.data?.now ?? now)) : 0);
-
-  const end = () => {
-    if (running && !window.confirm('A timer is still running. Stop it now and end your workday?')) return;
-    endDay.mutate(running ? { running: { action: 'stop_now' } } : {});
-  };
+  const morningCopied = morning.data?.[0] ?? null;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -85,13 +82,28 @@ function DuringWork({ now }: { now: number }) {
       <Card className="flex flex-col gap-3 p-5 lg:col-span-4">
         <Label>Workday</Label>
         <span className="num font-head text-[30px] font-extrabold">{wd ? duration(now - wd.workday.checkInAt) : '–'}</span>
-        <span className="text-sm text-text-2">
-          Since {wd ? timeOfDay(wd.workday.checkInAt) : '–'} · tracked {duration(tracked)}
-        </span>
-        <Button variant="ghost" onClick={end} disabled={endDay.isPending}>
+        {wd && <CheckInEditor summary={wd} />}
+        <span className="text-sm text-text-2">Tracked {duration(tracked)}</span>
+        <div className="flex items-center justify-between gap-2 border-t border-divider pt-3 text-sm">
+          {morningCopied ? (
+            <>
+              <span className="text-text-2">Morning message copied at {timeOfDay(morningCopied.createdAt)}</span>
+              <button type="button" className="font-semibold text-accent-ink underline-offset-2 hover:underline" onClick={() => wd && flows.openMessage('morning', wd.workday.id)}>
+                Open
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-text-2">Morning message not copied yet</span>
+              <Button size="sm" variant="soft" onClick={flows.openStart}>
+                Morning setup
+              </Button>
+            </>
+          )}
+        </div>
+        <Button variant="ghost" onClick={flows.openEnd}>
           End Workday
         </Button>
-        {endDay.error && <span className="text-sm text-danger">{endDay.error.message}</span>}
       </Card>
       <div className="lg:col-span-12">
         <FocusList title="Today's focus" tasks={today.data ?? []} emptyText="Nothing planned for today yet. Plan arrives in the next milestone." />
@@ -226,6 +238,10 @@ function FocusList({ title, tasks, emptyText }: { title: string; tasks: Task[]; 
 
 function AfterWork({ summary }: { summary: WorkdaySummary }) {
   const s = summary;
+  const flows = useWorkdayFlows();
+  const evening = useReports({ workdayId: s.workday.id, type: 'evening', limit: 1 });
+  const reopen = useAction<Record<string, never>, unknown>(`/api/workday/${s.workday.id}/reopen`);
+  const copied = evening.data?.[0] ?? null;
   const stat = (value: string, label: string) => (
     <div>
       <div className="num font-head text-[30px] font-extrabold">{value}</div>
@@ -243,6 +259,21 @@ function AfterWork({ summary }: { summary: WorkdaySummary }) {
         {stat(duration(s.breakMs), 'lunch and breaks')}
         {stat(duration(s.untrackedMs), 'untracked')}
         {stat(signedMinutes(s.balanceTodayMinutes), `balance today (${signedMinutes(s.runningBalanceMinutes)} total)`)}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4 text-sm">
+        <span className="text-text-2">{copied ? `Evening message copied at ${timeOfDay(copied.createdAt)}` : 'Evening message not copied yet'}</span>
+        <Button size="sm" variant={copied ? 'ghost' : 'primary'} onClick={() => flows.openMessage('evening', s.workday.id)}>
+          {copied ? 'Open evening message' : 'Write evening message'}
+        </Button>
+        <Button
+          size="sm"
+          className="ml-auto"
+          onClick={() => window.confirm('Reopen today’s workday? Its time balance is removed until you end it again.') && reopen.mutate({})}
+          disabled={reopen.isPending}
+        >
+          Reopen workday
+        </Button>
+        {reopen.error && <span className="w-full text-danger">{reopen.error.message}</span>}
       </div>
     </Card>
   );

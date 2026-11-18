@@ -15,7 +15,8 @@
     "dev:server": "pnpm --filter @monkstracker/server dev",
     "build": "pnpm --filter @monkstracker/web build && pnpm --filter @monkstracker/server build",
     "start": "node apps/server/dist/server.mjs",
-    "dev:web": "pnpm --filter @monkstracker/web dev"
+    "dev:web": "pnpm --filter @monkstracker/web dev",
+    "e2e": "node e2e/run.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

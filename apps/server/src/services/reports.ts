@@ -3,6 +3,8 @@
  */
 import {
   RuleError,
+  balanceMinutes,
+  MINUTE,
   generateEveningReport,
   generateMorningReport,
   overtimeNote,
@@ -62,29 +64,51 @@ function activeWorkdayId(ctx: Ctx, workdayId?: string): string {
 }
 
 /** Morning: projects of the tasks in Today (focus order), with focus tasks' Huly links (decision R5). */
-export function buildMorningReport(ctx: Ctx, opts: { workdayId?: string; blocker?: string } = {}): { workdayId: string; text: string } {
+export interface ReportOptions {
+  workdayId?: string;
+  blocker?: string;
+  /** Morning: the focus tasks in order, while you are still choosing them. Default: the Today list. */
+  focusTaskIds?: string[];
+  /** Override the "merge report groups" setting for this message (decision R6). */
+  mergeGroups?: boolean;
+  /** Evening: include the overtime note. Default true. */
+  includeNote?: boolean;
+  /** Evening: the planned check-out time, so the note is right before you check out. Default now. */
+  at?: number;
+}
+
+export function buildMorningReport(ctx: Ctx, opts: ReportOptions = {}): { workdayId: string; text: string; projectIds: string[] } {
   const workdayId = activeWorkdayId(ctx, opts.workdayId);
   const wd = getWorkday(ctx, workdayId);
   const c = common(ctx);
   const open = new Set(listStatuses(ctx).filter((s) => !s.isRejected).map((s) => s.id));
-  const focus = listBucket(ctx, 'today').filter((t) => open.has(t.statusId));
+  const focus = (
+    opts.focusTaskIds
+      ? opts.focusTaskIds.map((id) => mapTask(ctx.db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(id) as Row | undefined ?? notFound()))
+      : listBucket(ctx, 'today')
+  ).filter((t) => open.has(t.statusId));
+  const projects = projectLines(ctx, focus);
   const text = generateMorningReport({
     categories: c.categories,
     statuses: c.statuses,
     groups: c.groups,
-    projects: projectLines(ctx, focus),
+    projects,
     blocker: opts.blocker ?? wd.morningBlocker ?? 'None',
     includeFocusLine: c.settings.report.includeFocusLine,
-    mergeGroups: c.settings.report.mergeGroups,
+    mergeGroups: opts.mergeGroups ?? c.settings.report.mergeGroups,
   });
-  return { workdayId, text };
+  return { workdayId, text, projectIds: projects.map((p) => p.id) };
+}
+
+function notFound(): never {
+  throw new NotFoundError('Task');
 }
 
 /**
  * Evening (decision J3): projects you tracked time on today plus Today's Focus projects;
  * links are the tasks you worked on or completed today. Header note from the time balance.
  */
-export function buildEveningReport(ctx: Ctx, opts: { workdayId?: string; blocker?: string; includeNote?: boolean } = {}) {
+export function buildEveningReport(ctx: Ctx, opts: ReportOptions = {}) {
   const workdayId = activeWorkdayId(ctx, opts.workdayId);
   const wd = getWorkday(ctx, workdayId);
   const c = common(ctx);
@@ -96,7 +120,9 @@ export function buildEveningReport(ctx: Ctx, opts: { workdayId?: string; blocker
   const projectLevel = entries.filter((e) => !e.taskId && e.projectId).map((e) => e.projectId!);
   const focusProjects = listBucket(ctx, 'today').map((t) => t.projectId);
   const summary = workdaySummary(ctx, workdayId);
-  const note = (opts.includeNote ?? true) ? overtimeNote(summary.balanceTodayMinutes) : null;
+  // Before check-out, the note uses the planned check-out time (default now).
+  const balance = wd.checkOutAt === null && opts.at !== undefined ? balanceMinutes(opts.at - wd.checkInAt - wd.expectedMinutes * MINUTE) : summary.balanceTodayMinutes;
+  const note = (opts.includeNote ?? true) ? overtimeNote(balance) : null;
 
   let revisions: { line: string; links: string[] }[] | null = null;
   if (c.settings.report.revisionsSection) {
@@ -111,20 +137,21 @@ export function buildEveningReport(ctx: Ctx, opts: { workdayId?: string; blocker
     }));
   }
 
+  const projects = projectLines(ctx, tasks, [...projectLevel, ...focusProjects]);
   const text = generateEveningReport({
     categories: c.categories,
     statuses: c.statuses,
     groups: c.groups,
-    projects: projectLines(ctx, tasks, [...projectLevel, ...focusProjects]),
+    projects,
     blocker: opts.blocker ?? wd.eveningBlocker ?? wd.morningBlocker ?? 'None',
     headerNote: note,
-    mergeGroups: c.settings.report.mergeGroups,
+    mergeGroups: opts.mergeGroups ?? c.settings.report.mergeGroups,
     revisions,
   });
-  return { workdayId, text, note };
+  return { workdayId, text, note, balanceMinutes: balance, projectIds: projects.map((p) => p.id) };
 }
 
-export function buildReport(ctx: Ctx, type: ReportType, opts: { workdayId?: string; blocker?: string } = {}) {
+export function buildReport(ctx: Ctx, type: ReportType, opts: ReportOptions = {}) {
   if (type === 'morning') return buildMorningReport(ctx, opts);
   if (type === 'evening') return buildEveningReport(ctx, opts);
   const wd = currentWorkday(ctx);
@@ -157,8 +184,13 @@ export function getReport(ctx: Ctx, id: string) {
   return mapReport(r);
 }
 
-export function reportHistory(ctx: Ctx, limit = 50) {
-  return (ctx.db.prepare(`SELECT * FROM reports ORDER BY created_at DESC LIMIT ?`).all(limit) as Row[]).map(mapReport);
+export function reportHistory(ctx: Ctx, filter: { limit?: number; workdayId?: string; type?: ReportType } = {}) {
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (filter.workdayId) (where.push('workday_id = ?'), args.push(filter.workdayId));
+  if (filter.type) (where.push('type = ?'), args.push(filter.type));
+  const sql = `SELECT * FROM reports ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY created_at DESC LIMIT ?`;
+  return (ctx.db.prepare(sql).all(...args, Math.min(500, Math.max(1, filter.limit ?? 50))) as Row[]).map(mapReport);
 }
 
 /** Has this type already been sent to Discord for the workday? (duplicate guard for Phase 3) */

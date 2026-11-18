@@ -84,21 +84,21 @@ export function TimerBar() {
               </Button>
             </motion.div>
           ) : running && ctx ? (
-            <motion.div key={`run-${running.id}`} className="flex min-w-0 flex-wrap items-center gap-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+            <motion.div key={`run-${running.id}`} className="flex min-w-0 flex-1 items-center gap-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
               <span className="mt-live-dot" aria-hidden="true" />
               <CompanyDot color={companyColor(companies[companyIndex], Math.max(0, companyIndex))} />
-              <span className="min-w-0 truncate text-sm font-semibold">
+              <span className="min-w-0 shrink truncate text-sm font-semibold" title={[ctx.projectName, ctx.taskName].filter(Boolean).join(' › ')}>
                 {ctx.projectName}
                 {ctx.taskName && <span className="text-text-2"> › {ctx.taskName}</span>}
                 {running.kind === 'revision' && ctx.revision && <span className="text-accent-ink"> · Revision {ctx.revision.number}</span>}
               </span>
-              <span className="num font-head text-[19px] font-extrabold tracking-[-0.02em]">{clock(elapsed)}</span>
+              <span className="num shrink-0 font-head text-[19px] font-extrabold tracking-[-0.02em]">{clock(elapsed)}</span>
               {left !== null && (
-                <span className={`num text-[13px] ${left < 0 ? 'font-semibold text-danger' : 'text-text-2'}`}>
+                <span className={`num shrink-0 text-[13px] ${left < 0 ? 'font-semibold text-danger' : 'text-text-2'}`}>
                   {left >= 0 ? `${clock(left)} left` : `${clock(-left)} over`}
                 </span>
               )}
-              <span className="flex gap-2">
+              <span className="flex shrink-0 gap-2">
                 <Button size="sm" variant="primary" onClick={() => stop.mutate({})} aria-label="Pause timer">
                   <Pause size={15} aria-hidden="true" /> Pause
                 </Button>

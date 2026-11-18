@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard.tsx';
 import { Placeholder } from './pages/Placeholder.tsx';
 import { ProjectDetail } from './pages/ProjectDetail.tsx';
 import { Projects } from './pages/Projects.tsx';
+import { Reports } from './pages/Reports.tsx';
 import { Settings } from './pages/Settings.tsx';
 import { Time } from './pages/Time.tsx';
 
@@ -20,7 +21,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/time', component: Time }),
   page('/calendar', 'Calendar', 'Phase 2', 'Deadlines, leave and, later, Google Calendar meetings.'),
   page('/notes', 'Notes', 'Phase 2', 'Quick notes attached to projects and tasks, convertible to tasks.'),
-  page('/reports', 'Reports', 'M5', 'Daily, weekly and monthly hours by company, project and category.'),
+  createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: Reports }),
   createRoute({ getParentRoute: () => rootRoute, path: '/settings', component: Settings }),
 ]);
 

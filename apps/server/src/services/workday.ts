@@ -114,6 +114,7 @@ export interface EndWorkdayInput {
 /** Flow 8. Writes exactly one balance entry for the workday (replaced if the day is reopened and ended again). */
 export function endWorkday(ctx: Ctx, input: EndWorkdayInput = {}) {
   const at = input.at ?? ctx.now();
+  if (at > ctx.now()) throw new RuleError('end_in_future', 'Check-out cannot be in the future.');
   return ctx.db.transaction(() => {
     const id = openWorkdayId(ctx);
     if (!id) throw new ConflictError('no_workday', 'No workday is running.');
@@ -162,4 +163,65 @@ export function tasksCompletedIn(ctx: Ctx, workdayId: string): Task[] {
   const wd = getWorkday(ctx, workdayId);
   const end = wd.checkOutAt ?? ctx.now();
   return (ctx.db.prepare(`SELECT * FROM tasks WHERE completed_at >= ? AND completed_at <= ? ORDER BY completed_at`).all(wd.checkInAt, end) as Row[]).map(mapTask);
+}
+
+/**
+ * Flow 1 steps 3–4: saves Today's Focus. `focusTaskIds` is the whole ordered Today list;
+ * open Today tasks left out of it, and any `dropTaskIds`, move to This Week. Done tasks stay where they are.
+ */
+export function setFocus(ctx: Ctx, input: { focusTaskIds: string[]; dropTaskIds?: string[] }) {
+  const open = openStatusIds(ctx);
+  return ctx.db.transaction(() => {
+    const keep = new Set(input.focusTaskIds);
+    for (const t of listBucket(ctx, 'today')) if (open.has(t.statusId) && !keep.has(t.id)) updateTask(ctx, t.id, { planBucket: 'this_week' });
+    for (const id of input.dropTaskIds ?? []) if (!keep.has(id)) updateTask(ctx, id, { planBucket: 'this_week' });
+    input.focusTaskIds.forEach((id, i) => updateTask(ctx, id, { planBucket: 'today', sortOrder: i + 1 }));
+    return listBucket(ctx, 'today');
+  })();
+}
+
+/** Saves the morning blocker after the workday has started (Start Workday wizard, step "Blocker"). */
+export function setBlocker(ctx: Ctx, id: string, which: 'morning' | 'evening', blocker: string | null) {
+  getWorkday(ctx, id);
+  const col = which === 'morning' ? 'morning_blocker' : 'evening_blocker';
+  ctx.db.prepare(`UPDATE workdays SET ${col} = ? WHERE id = ?`).run(blocker?.trim() || null, id);
+  return getWorkday(ctx, id);
+}
+
+/** Flow 8 step 3: what you did today, for the End Workday review. */
+export function workdayReview(ctx: Ctx, id: string) {
+  const wd = getWorkday(ctx, id);
+  const end = wd.checkOutAt ?? ctx.now();
+  const statuses = listStatuses(ctx);
+  const done = new Set(statuses.filter((s) => s.isDone).map((s) => s.id));
+  const rejected = new Set(statuses.filter((s) => s.isRejected).map((s) => s.id));
+  const completed = tasksCompletedIn(ctx, id);
+  const rows = ctx.db
+    .prepare(
+      `SELECT task_id, SUM(COALESCE(ended_at, ?) - started_at) AS ms FROM time_entries
+       WHERE workday_id = ? AND task_id IS NOT NULL AND kind IN ('work', 'revision', 'meeting') GROUP BY task_id`,
+    )
+    .all(ctx.now(), id) as { task_id: string; ms: number }[];
+  const trackedByTask = Object.fromEntries(rows.map((r) => [r.task_id, Number(r.ms)]));
+  const task = (tid: string) => mapTask(ctx.db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(tid) as Row);
+  const inProgress = rows.map((r) => task(r.task_id)).filter((t) => !done.has(t.statusId) && !rejected.has(t.statusId));
+  const worked = new Set(rows.map((r) => r.task_id));
+  const unfinished = listBucket(ctx, 'today').filter((t) => !done.has(t.statusId) && !rejected.has(t.statusId) && !worked.has(t.id));
+  const revisions = (
+    ctx.db
+      .prepare(
+        `SELECT r.*, p.name AS project_name FROM revision_rounds r JOIN projects p ON p.id = r.project_id
+         WHERE (r.completed_at >= ? AND r.completed_at <= ?) OR (r.requested_at >= ? AND r.requested_at <= ?) ORDER BY r.requested_at`,
+      )
+      .all(wd.checkInAt, end, wd.checkInAt, end) as Row[]
+  ).map((r) => ({
+    id: String(r.id),
+    projectId: String(r.project_id),
+    projectName: String(r.project_name),
+    number: Number(r.number),
+    title: String(r.title),
+    status: String(r.status),
+    completedToday: r.completed_at !== null && Number(r.completed_at) >= wd.checkInAt && Number(r.completed_at) <= end,
+  }));
+  return { completed, inProgress, unfinished, revisions, trackedByTask, morningBlocker: wd.morningBlocker };
 }

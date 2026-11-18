@@ -219,6 +219,12 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   app.post('/api/workday/start', async (c) =>
     c.json(W.startWorkday(ctx, await body(c, z.object({ checkInAt: instant.optional(), dropTaskIds: z.array(id).optional(), focusTaskIds: z.array(id).optional(), blocker: z.string().max(500).nullable().optional() }))), 201),
   );
+  app.post('/api/workday/focus', async (c) => c.json(W.setFocus(ctx, await body(c, z.object({ focusTaskIds: z.array(id).max(200), dropTaskIds: z.array(id).max(200).optional() })))));
+  app.patch('/api/workday/:id/blocker', async (c) => {
+    const b = await body(c, z.object({ which: z.enum(['morning', 'evening']), blocker: z.string().max(500).nullable() }));
+    return c.json(W.setBlocker(ctx, c.req.param('id'), b.which, b.blocker));
+  });
+  app.get('/api/workday/:id/review', (c) => c.json(W.workdayReview(ctx, c.req.param('id'))));
   app.patch('/api/workday/:id/check-in', async (c) => c.json(W.editCheckIn(ctx, c.req.param('id'), (await body(c, z.object({ checkInAt: instant }))).checkInAt)));
   app.post('/api/workday/end', async (c) =>
     c.json(
@@ -227,6 +233,7 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
         await body(
           c,
           z.object({
+            at: instant.optional(),
             running: z.discriminatedUnion('action', [z.object({ action: z.literal('stop_now') }), z.object({ action: z.literal('stop_at'), at: instant }), z.object({ action: z.literal('keep') })]).optional(),
             blocker: z.string().max(500).nullable().optional(),
           }),
@@ -239,13 +246,27 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   // ── reports ──
   const reportType = z.enum(['morning', 'evening', 'lunch_start', 'lunch_end']);
   app.post('/api/reports/generate', async (c) => {
-    const b = await body(c, z.object({ type: reportType, workdayId: id.optional(), blocker: z.string().max(500).optional() }));
+    const b = await body(
+      c,
+      z.object({
+        type: reportType,
+        workdayId: id.optional(),
+        blocker: z.string().max(500).optional(),
+        focusTaskIds: z.array(id).max(200).optional(),
+        mergeGroups: z.boolean().optional(),
+        includeNote: z.boolean().optional(),
+        at: instant.optional(),
+      }),
+    );
     return c.json(R.buildReport(ctx, b.type, b));
   });
   app.post('/api/reports', async (c) =>
     c.json(R.recordReport(ctx, await body(c, z.object({ type: reportType, workdayId: id.nullable(), generatedText: z.string().max(50_000), finalText: z.string().max(50_000), via: z.enum(['copy', 'discord']) }))), 201),
   );
-  app.get('/api/reports', (c) => c.json(R.reportHistory(ctx, Number(c.req.query('limit') ?? 50))));
+  app.get('/api/reports', (c) => {
+    const q = z.object({ limit: z.coerce.number().int().optional(), workdayId: id.optional(), type: reportType.optional() }).parse(c.req.query());
+    return c.json(R.reportHistory(ctx, q));
+  });
 
   // ── editable lists (Settings) ──
   const named = z.object({ name: z.string().min(1).max(120) });

@@ -1,5 +1,5 @@
 import { Outlet, useRouterState } from '@tanstack/react-router';
-import { AnimatePresence, MotionConfig, motion } from 'motion/react';
+import { MotionConfig, motion } from 'motion/react';
 import { useCatalog, useHeartbeat, useTimer } from '../lib/queries.ts';
 import { useTimeOfDayTheme } from '../lib/theme.ts';
 import { Sidebar } from './Sidebar.tsx';
@@ -8,6 +8,7 @@ import { QuickAdd } from './QuickAdd.tsx';
 import { useEffect } from 'react';
 import { unlockAudioOnFirstInteraction } from '../lib/sound.ts';
 import { TimerBar } from './TimerBar.tsx';
+import { WorkdayFlowsProvider } from './WorkdayFlows.tsx';
 
 export function AppShell() {
   const catalog = useCatalog();
@@ -20,6 +21,7 @@ export function AppShell() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <WorkdayFlowsProvider>
       <div className="flex min-h-full bg-canvas">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -29,21 +31,21 @@ export function AppShell() {
               Cannot reach the MonksTracker server on this computer. Your data is safe; start the server and this page reconnects by itself.
             </div>
           )}
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.main
-              key={path}
-              className="min-w-0 flex-1 px-6 py-6 lg:px-8"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } }}
-              exit={{ opacity: 0, y: -6, transition: { duration: 0.14 } }}
-            >
-              <Outlet />
-            </motion.main>
-          </AnimatePresence>
+          {/* Enter animation only: an exit animation would show the next page inside the leaving one and then
+              mount it a second time, losing anything typed in the first moments. */}
+          <motion.main
+            key={path}
+            className="min-w-0 flex-1 px-6 py-6 lg:px-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } }}
+          >
+            <Outlet />
+          </motion.main>
         </div>
       </div>
       <QuickAdd />
       <LunchFlow />
+      </WorkdayFlowsProvider>
     </MotionConfig>
   );
 }

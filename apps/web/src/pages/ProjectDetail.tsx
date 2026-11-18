@@ -431,10 +431,15 @@ function AddTask({ projectId, parentId, autoFocus, onDone }: { projectId: string
   const submit = async () => {
     const t = text.trim();
     if (!t) return onDone?.();
-    if (isHuly) await quick.mutateAsync({ text: t });
-    else await createTask.mutateAsync({ name: t });
+    // Clear at once so you can type the next task while this one saves; put the text back if saving fails.
     setText('');
     ref.current?.focus();
+    try {
+      if (isHuly) await quick.mutateAsync({ text: t });
+      else await createTask.mutateAsync({ name: t });
+    } catch {
+      setText((now) => now || t);
+    }
   };
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

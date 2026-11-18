@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { api, post, type ApiError } from './api.ts';
-import type { Catalog, Entry, ProjectSummary, Task, TimerState, WorkdaySummary } from './types.ts';
+import type { Catalog, Entry, ProjectSummary, ReportType, SavedReport, Task, TimerState, WorkdayReview, WorkdaySummary } from './types.ts';
 
 export const keys = {
   catalog: ['catalog'] as const,
@@ -24,6 +24,21 @@ export const useWorkday = () =>
   });
 
 export const useToday = () => useQuery({ queryKey: keys.today, queryFn: () => api<Task[]>('/api/plan/today') });
+
+export const usePlan = (bucket: 'backlog' | 'this_week' | 'today', enabled = true) =>
+  useQuery({ queryKey: ['plan', bucket] as const, queryFn: () => api<Task[]>(`/api/plan/${bucket}`), enabled });
+
+export const useWorkdayReview = (workdayId: string | null) =>
+  useQuery({ queryKey: ['workday-review', workdayId] as const, queryFn: () => api<WorkdayReview>(`/api/workday/${workdayId}/review`), enabled: !!workdayId });
+
+/** Saved messages, newest first. */
+export const useReports = (filter: { workdayId?: string | null; type?: ReportType; limit?: number } = {}, enabled = true) => {
+  const q = new URLSearchParams();
+  if (filter.workdayId) q.set('workdayId', filter.workdayId);
+  if (filter.type) q.set('type', filter.type);
+  if (filter.limit) q.set('limit', String(filter.limit));
+  return useQuery({ queryKey: ['reports', filter.workdayId ?? null, filter.type ?? null, filter.limit ?? null] as const, queryFn: () => api<SavedReport[]>(`/api/reports?${q}`), enabled });
+};
 
 export const useProjects = (companyId?: string) =>
   useQuery({

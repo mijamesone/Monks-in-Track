@@ -103,7 +103,7 @@ export interface EntryWithContext extends Entry {
 }
 
 export interface WorkdaySummary {
-  workday: { id: string; date: string; checkInAt: number; checkOutAt: number | null; expectedMinutes: number; morningBlocker: string | null };
+  workday: { id: string; date: string; checkInAt: number; checkOutAt: number | null; expectedMinutes: number; morningBlocker: string | null; eveningBlocker?: string | null };
   durationMs: number;
   trackedMs: number;
   breakMs: number;
@@ -136,4 +136,35 @@ export interface ProjectSummary {
   hulyUrl: string | null;
   totals: { total: number; direct: number };
   completion: { done: number; total: number; percent: number | null };
+}
+
+export type ReportType = 'morning' | 'evening' | 'lunch_start' | 'lunch_end';
+
+export interface SavedReport {
+  id: string;
+  workdayId: string | null;
+  type: ReportType;
+  generatedText: string;
+  finalText: string;
+  copiedAt: number | null;
+  sentAt: number | null;
+  locked: boolean;
+  createdAt: number;
+}
+
+export interface GeneratedReport {
+  workdayId: string | null;
+  text: string;
+  projectIds?: string[];
+  note?: string | null;
+  balanceMinutes?: number;
+}
+
+export interface WorkdayReview {
+  completed: Task[];
+  inProgress: Task[];
+  unfinished: Task[];
+  revisions: { id: string; projectId: string; projectName: string; number: number; title: string; status: string; completedToday: boolean }[];
+  trackedByTask: Record<string, number>;
+  morningBlocker: string | null;
 }
