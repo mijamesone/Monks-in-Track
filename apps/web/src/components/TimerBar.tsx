@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, ExternalLink, Pause, Play, Coffee } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Clock, Coffee, ExternalLink, Pause, Play, RotateCcw, Utensils } from 'lucide-react';
+import { EditStartDialog, RevisionDialog } from './TimerTools.tsx';
 import { useStartTimer } from '../lib/actions.ts';
 import { clock, duration, timeOfDay, MINUTE } from '../lib/format.ts';
 import { useAction, useCatalog, useNow, useTimer, useWorkday } from '../lib/queries.ts';
@@ -16,6 +18,9 @@ export function TimerBar() {
   const complete = useAction<{ id: string }, unknown>((b) => `/api/tasks/${b.id}/complete`);
   const review = useAction<{ action: string }, unknown>('/api/timer/review');
   const { start } = useStartTimer();
+  const startBreak = useAction<{ kind: 'lunch' | 'break' }, unknown>('/api/breaks/start');
+  const [editing, setEditing] = useState(false);
+  const [revision, setRevision] = useState(false);
 
   const t = timer.data;
   const running = t?.running ?? null;
@@ -29,6 +34,17 @@ export function TimerBar() {
   const used = (ctx?.priorMs ?? 0) + elapsed;
   const left = estimateMs === null ? null : estimateMs - used;
 
+  const workdayOpen = !!wd && !wd.workday.checkOutAt;
+  const breakButtons = workdayOpen && !t?.break && (
+    <span className="ml-auto flex gap-2">
+      <Button size="sm" variant="ghost" onClick={() => startBreak.mutate({ kind: 'lunch' })} aria-label="Start lunch" title="Start lunch">
+        <Utensils size={15} aria-hidden="true" />
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => startBreak.mutate({ kind: 'break' })} aria-label="Start a short break" title="Start a short break">
+        <Coffee size={15} aria-hidden="true" />
+      </Button>
+    </span>
+  );
   const workdayChip = !wd
     ? 'Workday not started'
     : wd.workday.checkOutAt
@@ -62,8 +78,9 @@ export function TimerBar() {
               <Coffee size={18} aria-hidden="true" className="text-text-2" />
               <span className="text-sm font-semibold">{t.break.kind === 'lunch' ? 'On lunch' : 'On a break'}</span>
               <span className="num font-head text-[17px] font-extrabold">{clock(now - t.break.startedAt)}</span>
+              {t.breakPlannedEnd && <span className="num text-[13px] text-text-2">until {timeOfDay(t.breakPlannedEnd)}</span>}
               <Button size="sm" variant="primary" onClick={() => endBreak.mutate({ resume: true })}>
-                Back to work
+                {t.resumeContext ? `Back to ${t.resumeContext.taskName ?? t.resumeContext.projectName}` : 'Back to work'}
               </Button>
             </motion.div>
           ) : running && ctx ? (
@@ -90,9 +107,15 @@ export function TimerBar() {
                     <Check size={15} aria-hidden="true" /> Done
                   </Button>
                 )}
+                <Button size="sm" variant={running.kind === 'revision' ? 'soft' : 'ghost'} onClick={() => setRevision(true)} aria-label="Revision mode" title="Revision mode">
+                  <RotateCcw size={14} aria-hidden="true" /> {running.kind === 'revision' ? 'Revision on' : ''}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(true)} aria-label="Edit start time">
+                  <Clock size={14} aria-hidden="true" /> {timeOfDay(running.startedAt)}
+                </Button>
                 {ctx.hulyUrl && (
-                  <a href={ctx.hulyUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-8 items-center gap-1.5 rounded-field border border-line px-3 text-[13px] font-semibold text-text hover:bg-surface-2">
-                    <ExternalLink size={14} aria-hidden="true" /> Huly
+                  <a href={ctx.hulyUrl} target="_blank" rel="noreferrer" aria-label="Open in Huly" title="Open in Huly" className="inline-flex min-h-8 items-center gap-1.5 rounded-field border border-line px-2.5 text-[13px] font-semibold text-text hover:bg-surface-2">
+                    <ExternalLink size={14} aria-hidden="true" />
                   </a>
                 )}
               </span>
@@ -115,7 +138,10 @@ export function TimerBar() {
             </motion.div>
           )}
         </AnimatePresence>
+        {breakButtons}
       </div>
+      <EditStartDialog open={editing} onClose={() => setEditing(false)} />
+      <RevisionDialog open={revision} onClose={() => setRevision(false)} />
     </header>
   );
 }

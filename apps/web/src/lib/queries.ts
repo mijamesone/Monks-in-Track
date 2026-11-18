@@ -124,8 +124,10 @@ export interface Revision {
 }
 
 export const useProject = (id: string) => useQuery({ queryKey: ['projects', 'detail', id], queryFn: () => api<ProjectDetail>(`/api/projects/${id}`) });
-export const useProjectTasks = (id: string) => useQuery({ queryKey: ['projects', 'tasks', id], queryFn: () => api<TaskWithTime[]>(`/api/projects/${id}/tasks`) });
-export const useRevisions = (id: string) => useQuery({ queryKey: ['projects', 'revisions', id], queryFn: () => api<Revision[]>(`/api/projects/${id}/revisions`) });
+export const useProjectTasks = (id: string) =>
+  useQuery({ queryKey: ['projects', 'tasks', id], queryFn: () => api<TaskWithTime[]>(`/api/projects/${id}/tasks`), enabled: !!id });
+export const useRevisions = (id: string) =>
+  useQuery({ queryKey: ['projects', 'revisions', id], queryFn: () => api<Revision[]>(`/api/projects/${id}/revisions`), enabled: !!id });
 export const useProjectEntries = (id: string) =>
   useQuery({ queryKey: ['projects', 'entries', id], queryFn: () => api<Entry[]>(`/api/entries?from=0&to=${Date.now() + 86_400_000}&projectId=${id}`) });
 

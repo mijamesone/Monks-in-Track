@@ -190,12 +190,16 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   );
   app.post('/api/heartbeat', async (c) => c.json(T.heartbeat(ctx, (await body(c, z.object({ interaction: z.boolean().optional() }))).interaction ?? false)));
   app.post('/api/breaks/start', async (c) => c.json(T.startBreak(ctx, (await body(c, z.object({ kind: z.enum(['break', 'lunch']) }))).kind), 201));
+  app.post('/api/breaks/extend', async (c) => c.json(T.extendBreak(ctx, (await body(c, z.object({ minutes: z.number().int().min(1).max(120) }))).minutes)));
   app.post('/api/breaks/end', async (c) => c.json(T.endBreak(ctx, await body(c, z.object({ resume: z.boolean().optional() })))));
 
   // ── entries ──
   app.get('/api/entries', (c) => {
-    const q = z.object({ from: z.coerce.number().int(), to: z.coerce.number().int(), projectId: id.optional(), kind: kind.optional() }).parse(c.req.query());
-    return c.json(T.listEntries(ctx, q));
+    const q = z
+      .object({ from: z.coerce.number().int(), to: z.coerce.number().int(), projectId: id.optional(), kind: kind.optional(), context: z.enum(['1']).optional() })
+      .parse(c.req.query());
+    const list = T.listEntries(ctx, q);
+    return c.json(q.context ? list.map((e) => ({ ...e, context: T.entryContext(ctx, e) })) : list);
   });
   app.post('/api/entries', async (c) =>
     c.json(T.addManualEntry(ctx, await body(c, z.object({ projectId: id.nullable(), taskId: id.nullable(), kind, revisionRoundId: id.nullable().optional(), startedAt: instant, endedAt: instant, note: z.string().max(2000).nullable().optional() }))), 201),

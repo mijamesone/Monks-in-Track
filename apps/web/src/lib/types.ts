@@ -41,7 +41,16 @@ export interface Catalog {
   categories: { id: string; name: string; reportOrder: number; archivedAt: number | null }[];
   projectTypes: { id: string; name: string }[];
   statuses: Status[];
-  settings: { theme: ThemeSetting; workingDays: number[]; fullDayMinutes: number } & Record<string, unknown>;
+  settings: {
+    theme: ThemeSetting;
+    workingDays: number[];
+    fullDayMinutes: number;
+    lunchFirstReminder: string;
+    lunchSecondReminder: string;
+    lunchMinutes: number;
+    lunchExtendOptions: number[];
+    breakMinutes: number;
+  } & Record<string, unknown>;
 }
 
 export interface Entry {
@@ -82,6 +91,15 @@ export interface TimerState {
   lastStoppedContext: EntryContext | null;
   review: TimerReview | null;
   workdayId: string | null;
+  breakPlannedEnd: number | null;
+  resumeContext: EntryContext | null;
+  lunchTaken: boolean;
+}
+
+export interface EntryWithContext extends Entry {
+  source: string;
+  note: string | null;
+  context: EntryContext | null;
 }
 
 export interface WorkdaySummary {

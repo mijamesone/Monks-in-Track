@@ -54,6 +54,8 @@ export const DEFAULT_SETTINGS = {
   lunchFirstReminder: '13:20',
   lunchSecondReminder: '13:30',
   lunchMinutes: 60,
+  /** Default length of a short break, used for its end reminder. */
+  breakMinutes: 10,
   lunchExtendOptions: [5, 10, 15],
   idleMinutes: 10,
   forgottenTimerMinutes: 180,

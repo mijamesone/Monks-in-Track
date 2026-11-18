@@ -180,14 +180,14 @@ export function discardTimer(ctx: Ctx): { discarded: string } {
   return { discarded: running.id };
 }
 
-/** Edit the start of the running timer (Clockify feature). Must not overlap the previous entry. */
+/** Edit the start of the running timer (Clockify feature). Must not overlap the previous entry, including lunch and breaks. */
 export function adjustRunningStart(ctx: Ctx, newStart: number): Entry {
   const running = runningTimer(ctx);
   if (!running) throw new RuleError('nothing_running', 'No timer is running.');
   const prev = ctx.db
     .prepare(
       `SELECT MAX(ended_at) AS e FROM time_entries
-       WHERE id <> ? AND ended_at IS NOT NULL AND kind IN ('work', 'revision', 'meeting') AND ended_at <= ?`,
+       WHERE id <> ? AND ended_at IS NOT NULL AND ended_at <= ?`,
     )
     .get(running.id, running.startedAt) as { e: number | null };
   validateNewStart(running, newStart, ctx.now(), prev.e);
@@ -257,6 +257,9 @@ export function startBreak(ctx: Ctx, kind: 'break' | 'lunch', at?: number): { en
       setState(ctx, 'resume_target', null);
     }
     const entry = insertEntry(ctx, { projectId: null, taskId: null, kind, workdayId, startedAt: when, endedAt: null, revisionRoundId: null }, 'timer');
+    // The planned end drives the "1 minute before" alarm; it is stored so a refresh never loses it.
+    const s = getSettings(ctx);
+    setState(ctx, 'break_planned_end', String(when + (kind === 'lunch' ? s.lunchMinutes : s.breakMinutes) * MINUTE));
     interacted(ctx, when);
     return { entry, paused };
   })();
@@ -274,9 +277,22 @@ export function endBreak(ctx: Ctx, opts: { at?: number; resume?: boolean } = {})
     const target = getState(ctx, 'resume_target');
     if (opts.resume && target) resumed = startTimer(ctx, JSON.parse(target) as TimerTarget, { at: when });
     setState(ctx, 'resume_target', null);
+    setState(ctx, 'break_planned_end', null);
     interacted(ctx, when);
     return { entry: getEntry(ctx, brk.id), resumed };
   })();
+}
+
+/** Lunch flow: "+5 / +10 / +15 min" moves the planned end (and so the alarm) later. */
+export function extendBreak(ctx: Ctx, minutes: number): { plannedEnd: number } {
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 120) throw new RuleError('extend_range', 'Extend by 1 to 120 minutes.');
+  const brk = runningBreak(ctx);
+  if (!brk) throw new RuleError('no_break', 'No break is running.');
+  const current = Number(getState(ctx, 'break_planned_end') ?? brk.startedAt);
+  const plannedEnd = Math.max(current, ctx.now()) + minutes * MINUTE;
+  setState(ctx, 'break_planned_end', String(plannedEnd));
+  interacted(ctx, ctx.now());
+  return { plannedEnd };
 }
 
 // ───────────────────────── manual entries and edits ─────────────────────────
@@ -494,14 +510,22 @@ export function timerState(ctx: Ctx) {
         .prepare(`SELECT * FROM time_entries WHERE ended_at IS NOT NULL AND kind IN ('work', 'revision', 'meeting') ORDER BY ended_at DESC LIMIT 1`)
         .get() as Row | undefined) ?? null);
   const lastEntry = last ? mapEntry(last) : null;
+  const workdayId = openWorkdayId(ctx);
+  const resume = getState(ctx, 'resume_target');
+  const resumeTarget = resume ? (JSON.parse(resume) as TimerTarget) : null;
   return {
     now: ctx.now(),
     running,
     runningContext: entryContext(ctx, running),
     break: brk,
+    breakPlannedEnd: brk ? Number(getState(ctx, 'break_planned_end') ?? 0) || null : null,
+    /** What "Back to work" will resume, if anything. */
+    resumeContext: brk && resumeTarget ? entryContext(ctx, { id: '', projectId: resumeTarget.projectId, taskId: resumeTarget.taskId, kind: resumeTarget.kind, revisionRoundId: resumeTarget.revisionRoundId ?? null, workdayId: null, startedAt: 0, endedAt: 0, source: 'timer', note: null, meetingId: null }) : null,
+    /** Lunch already taken in the open workday (the reminders stop). */
+    lunchTaken: workdayId ? !!ctx.db.prepare(`SELECT 1 FROM time_entries WHERE workday_id = ? AND kind = 'lunch'`).get(workdayId) : false,
     lastStopped: lastEntry,
     lastStoppedContext: entryContext(ctx, lastEntry),
     review: timerReview(ctx),
-    workdayId: openWorkdayId(ctx),
+    workdayId,
   };
 }

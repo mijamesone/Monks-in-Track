@@ -3,7 +3,10 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useCatalog, useHeartbeat, useTimer } from '../lib/queries.ts';
 import { useTimeOfDayTheme } from '../lib/theme.ts';
 import { Sidebar } from './Sidebar.tsx';
+import { LunchFlow } from './LunchFlow.tsx';
 import { QuickAdd } from './QuickAdd.tsx';
+import { useEffect } from 'react';
+import { unlockAudioOnFirstInteraction } from '../lib/sound.ts';
 import { TimerBar } from './TimerBar.tsx';
 
 export function AppShell() {
@@ -11,6 +14,7 @@ export function AppShell() {
   const timer = useTimer();
   useTimeOfDayTheme(catalog.data?.settings.theme);
   useHeartbeat();
+  useEffect(unlockAudioOnFirstInteraction, []);
   const path = useRouterState({ select: (s) => s.location.pathname.split('/').slice(0, 3).join('/') });
   const offline = catalog.isError && timer.isError;
 
@@ -39,6 +43,7 @@ export function AppShell() {
         </div>
       </div>
       <QuickAdd />
+      <LunchFlow />
     </MotionConfig>
   );
 }

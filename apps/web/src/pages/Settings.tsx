@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Field, Select, TextInput } from '../components/fields.tsx';
+import { Field, Select, TextInput, TimeInput, parseClock } from '../components/fields.tsx';
 import { Button, Card, CompanyDot, EmptyState, Label, StatusChip, companyColor } from '../components/ui.tsx';
 import { useCatalog, useMutate, useProjects } from '../lib/queries.ts';
 import type { Company, Status } from '../lib/types.ts';
@@ -303,13 +303,27 @@ function Theme() {
       {theme.mode === 'auto' && (
         <div className="grid max-w-md grid-cols-2 gap-3">
           <Field label="Light from">
-            <TextInput type="time" value={theme.lightFrom} onChange={(e) => e.target.value && set({ lightFrom: e.target.value })} />
+            <ThemeTime value={theme.lightFrom} onSave={(v) => set({ lightFrom: v })} />
           </Field>
           <Field label="Dark from">
-            <TextInput type="time" value={theme.darkFrom} onChange={(e) => e.target.value && set({ darkFrom: e.target.value })} />
+            <ThemeTime value={theme.darkFrom} onSave={(v) => set({ darkFrom: v })} />
           </Field>
         </div>
       )}
     </Card>
+  );
+}
+
+function ThemeTime({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value);
+  return (
+    <TimeInput
+      value={v}
+      onChange={setV}
+      onBlur={() => {
+        const n = parseClock(v);
+        if (n && n !== value) onSave(n);
+      }}
+    />
   );
 }
