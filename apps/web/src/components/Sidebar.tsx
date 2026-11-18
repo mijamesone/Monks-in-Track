@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { BarChart3, CalendarDays, Clock3, FolderKanban, LayoutDashboard, ListTodo, NotebookPen, Settings } from 'lucide-react';
+import { BarChart3, CalendarDays, Clock3, FolderKanban, LayoutDashboard, ListTodo, NotebookPen, Plus, Settings } from 'lucide-react';
+import { openQuickAdd } from './QuickAdd.tsx';
 import { useCompany } from '../lib/company.tsx';
 import { useCatalog } from '../lib/queries.ts';
 import { CompanyDot, companyColor } from './ui.tsx';
@@ -63,7 +64,12 @@ export function Sidebar() {
         </Link>
       ))}
 
-      <div className="mt-auto border-t border-divider px-3 pt-3 text-xs text-text-3">Ctrl+K search · Q quick add</div>
+      <div className="mt-auto flex flex-col gap-2 border-t border-divider pt-3">
+        <button type="button" onClick={openQuickAdd} className="flex min-h-10 items-center gap-2 rounded-field border border-line px-3 text-sm font-semibold text-text hover:bg-surface-2">
+          <Plus size={16} aria-hidden="true" /> Quick add
+          <kbd className="ml-auto rounded border border-line px-1.5 text-[11px] text-text-3">Q</kbd>
+        </button>
+      </div>
     </nav>
   );
 }

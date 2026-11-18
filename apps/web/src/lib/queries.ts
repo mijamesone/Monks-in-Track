@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { api, post, type ApiError } from './api.ts';
-import type { Catalog, ProjectSummary, Task, TimerState, WorkdaySummary } from './types.ts';
+import type { Catalog, Entry, ProjectSummary, Task, TimerState, WorkdaySummary } from './types.ts';
 
 export const keys = {
   catalog: ['catalog'] as const,
@@ -85,4 +85,61 @@ export function useHeartbeat() {
       window.removeEventListener('keydown', mark);
     };
   }, [qc]);
+}
+
+export interface ProjectDetail extends ProjectSummary {
+  typeId: string | null;
+  reportGroupId: string | null;
+  priority: number;
+  startDate: string | null;
+  deadline: string | null;
+  estimateMinutes: number | null;
+  assignedBy: string | null;
+  clientName: string | null;
+  description: string | null;
+  notes: string | null;
+  archivedAt: number | null;
+  totals: { total: number; direct: number; revision: number; meeting: number };
+  estimate: { estimate: number | null; actual: number; remaining: number | null; overBudget: number | null };
+  taskEstimateMinutes: number;
+}
+
+export interface TaskWithTime extends Task {
+  sortOrder: number;
+  description: string | null;
+  dueDate: string | null;
+  archivedAt: number | null;
+  time: { own: number; total: number };
+}
+
+export interface Revision {
+  id: string;
+  number: number;
+  title: string;
+  status: 'requested' | 'in_progress' | 'done';
+  requestedBy: string | null;
+  requestedAt: number;
+  taskId: string | null;
+  timeMs: number;
+}
+
+export const useProject = (id: string) => useQuery({ queryKey: ['projects', 'detail', id], queryFn: () => api<ProjectDetail>(`/api/projects/${id}`) });
+export const useProjectTasks = (id: string) => useQuery({ queryKey: ['projects', 'tasks', id], queryFn: () => api<TaskWithTime[]>(`/api/projects/${id}/tasks`) });
+export const useRevisions = (id: string) => useQuery({ queryKey: ['projects', 'revisions', id], queryFn: () => api<Revision[]>(`/api/projects/${id}/revisions`) });
+export const useProjectEntries = (id: string) =>
+  useQuery({ queryKey: ['projects', 'entries', id], queryFn: () => api<Entry[]>(`/api/entries?from=0&to=${Date.now() + 86_400_000}&projectId=${id}`) });
+
+/** Any write (POST, PATCH, PUT, DELETE). Refreshes everything that can depend on it. */
+export function useMutate<TVars>(method: 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: (v: TVars) => string, body: (v: TVars) => unknown = (v) => v) {
+  const qc = useQueryClient();
+  return useMutation<unknown, ApiError, TVars>({
+    mutationFn: (v: TVars) => api(path(v), { method, body: method === 'DELETE' ? undefined : body(v) }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['projects'] });
+      void qc.invalidateQueries({ queryKey: ['plan'] });
+      void qc.invalidateQueries({ queryKey: keys.timer });
+      void qc.invalidateQueries({ queryKey: keys.workday });
+      void qc.invalidateQueries({ queryKey: keys.catalog });
+    },
+  });
 }

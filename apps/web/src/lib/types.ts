@@ -12,6 +12,8 @@ export interface Company {
 }
 
 export interface Status {
+  color?: string | null;
+  sortOrder?: number;
   id: string;
   key: string;
   name: string;
@@ -27,8 +29,15 @@ export interface ThemeSetting {
   darkFrom: string;
 }
 
+export interface ReportGroup {
+  id: string;
+  label: string;
+}
+
 export interface Catalog {
   companies: Company[];
+  reportGroups: ReportGroup[];
+  hulyCodes: { code: string; projectId: string | null }[];
   categories: { id: string; name: string; reportOrder: number; archivedAt: number | null }[];
   projectTypes: { id: string; name: string }[];
   statuses: Status[];
