@@ -1,0 +1,21 @@
+{
+  "name": "@monkstracker/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MonksTracker for Windows: the same web app in its own window, with the local server built in.",
+  "productName": "MonksTracker",
+  "author": "mijamesone",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node build.mjs && electron .",
+    "dist:win": "node build.mjs && node build-win.cjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "45.2.2",
+    "electron-builder": "26.18.1",
+    "electron-updater": "6.8.12",
+    "esbuild": "^0.28.2"
+  }
+}

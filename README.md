@@ -11,12 +11,13 @@ The full product specification lives in the shared MonksTracker spec document; t
 | `packages/core` | Pure business rules with no I/O: time totals, timer transitions, workday and balance maths, Huly link parsing, estimate parsing, completion %, Discord report generator, first-run defaults |
 | `apps/server` | Local server on 127.0.0.1 with the SQLite database, migrations and the HTTP API |
 | `apps/web` | The React app: Direction A "Clean Studio" design tokens, app shell, timer bar, dashboard, projects, time, workday wizards, reports |
+| `apps/desktop` | The Windows app (Electron): runs the server in the background and shows the web app in its own window, with tray, start with Windows and self-update. `pnpm dist:win` builds the installer |
 | `e2e` | Browser tests that drive the real app on a fresh sample database |
 | `docs/FEATURES.md` | Every feature, where it sits on screen, and which test covers it (the checklist for the design phase) |
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22.16 or newer (the database is Node's built-in SQLite, so there is no native module to compile)
 - pnpm 10 (`corepack enable` once)
 
 ## Commands
@@ -29,6 +30,7 @@ pnpm build         # single-file server at apps/server/dist/server.mjs
 pnpm start         # run the built server on http://127.0.0.1:4545
 pnpm dev:server    # run the server from source with reload (port 4545)
 pnpm dev:web       # run the web app with hot reload on http://127.0.0.1:5173 (talks to the dev server)
+pnpm dist:win      # Windows installer at apps/desktop/release/MonksTracker-Setup-<version>.exe
 ```
 
 Browser tests (after `pnpm build`; each suite starts its own server on a fresh sample database, so your real data is never touched):
@@ -56,18 +58,8 @@ The database is `monkstracker.sqlite`; set a backup folder in Settings for the a
 
 ## Windows: install on your PC
 
-Step-by-step guide: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md).
-
-### Start with Windows
-
-After `pnpm install` and `pnpm build`, from the repository folder:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\windows\install-autostart.ps1
-```
-
-This adds a hidden-window launcher to your Startup folder and starts the server now.
-Remove it with `scripts\windows\uninstall-autostart.ps1` (your data is not touched).
+Run `MonksTracker-Setup-<version>.exe`: it installs, starts with Windows in the tray, and updates itself.
+Full guide, including the manual install without the installer: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md).
 
 ## Design
 

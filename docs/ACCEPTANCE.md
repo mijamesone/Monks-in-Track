@@ -63,6 +63,6 @@ Test locations: `api` = `apps/server/test/api.test.ts`, `gate` = `apps/server/te
 
 ## Still to check on your PC (not part of the 24, but needed for real use)
 
-- Install with `docs/SETUP-WINDOWS.md`, and start with Windows (the auto-start scripts have not been run on Windows yet).
+- Install with `MonksTracker-Setup.exe` (`docs/SETUP-WINDOWS.md`), and check it starts with Windows in the tray. The installer was built and the app tested on Linux; it has not been run on Windows yet.
 - Lunch chime, alarm and Windows notifications.
 - A full real workday, then your list of fixes (the spec's last gate step).

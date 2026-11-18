@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 import {
   DEFAULT_CATEGORIES,
@@ -8,8 +7,9 @@ import {
   DEFAULT_STATUSES,
 } from '@monkstracker/core';
 import { MIGRATIONS } from './migrations.ts';
+import { Database } from './sqlite.ts';
 
-export type DB = Database.Database;
+export type DB = Database;
 
 /** Opens (and creates) the database file with safe settings, then migrates it. Use ':memory:' in tests. */
 export function openDatabase(file: string): DB {

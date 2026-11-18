@@ -178,6 +178,17 @@ Last updated: M5 (Plan board, full Dashboard, hours analytics). This is the comp
 | Backups: folder, daily time, keep days, Back up now, list, Restore (saves a copy first) | Settings › Backups | e2e: gate-phase1; server |
 | Security: set / change / remove PIN, auto-lock minutes, Lock now; unlock screen | Settings › Security (PIN) | e2e: gate-phase1; server |
 
+## Windows app (apps/desktop)
+
+| Feature | Where it is now | Test |
+|---|---|---|
+| Own window showing the app; outside links (Huly) open in the normal browser | Desktop app | desktop smoke run (Linux) |
+| Close keeps it in the tray (reminders and chime keep working); tray menu: Open, Start with Windows, Open data folder, version, Quit | Tray icon | desktop smoke run (close hides) |
+| Starts with Windows, hidden in the tray (on by default, switchable) | Tray menu | not yet run on Windows |
+| Self-update from GitHub releases; "Restart to update" | Notification, tray menu | not yet run on Windows |
+| Sound and notifications without a first click | Desktop app | desktop smoke run |
+| Ctrl+R / F5 reload, Ctrl +/−/0 zoom | Desktop app | none |
+
 ## Not built yet (so not in this list)
 
 Command palette (Ctrl+K), right panel, Activity and Notes tabs on projects; Calendar, Notes, focus mode, Pomodoro, celebrations, idle detection (Phase 2); Discord sending, Huly live lookup, Google Calendar, voice notes, Gantt (Phase 3).

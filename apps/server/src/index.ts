@@ -50,3 +50,7 @@ const shutdown = () => {
 };
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+// Inside the Windows desktop app the server runs as an Electron utility process; the app asks it to stop this way.
+(process as unknown as { parentPort?: { on(e: 'message', cb: (m: { data: unknown }) => void): void } }).parentPort?.on('message', (m) => {
+  if (m.data === 'shutdown') shutdown();
+});
