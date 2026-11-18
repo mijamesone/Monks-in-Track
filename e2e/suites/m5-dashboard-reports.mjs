@@ -75,7 +75,8 @@ export default async function ({ page, api, base, step, shot }) {
     const cat = (await api('/api/catalog')).categories.find((c) => c.name === 'Client Work');
     await hours.getByLabel('Category').selectOption(cat.id);
     await card('Client vs internal').getByText('Client Work').first().waitFor({ timeout: 5000 });
-    if ((await card('Client vs internal').getByText('Internal Work').count()) !== 0) throw new Error('internal shown under a client filter');
+    // The previous numbers stay visible until the filtered ones arrive, so wait for Internal Work to go.
+    await card('Client vs internal').getByText('Internal Work').waitFor({ state: 'hidden', timeout: 5000 });
     await shot('m5-reports-month', { fullPage: true });
   });
 }

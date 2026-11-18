@@ -27,7 +27,7 @@ Last updated: M5 (Plan board, full Dashboard, hours analytics). This is the comp
 | Workday chip: "Workday not started" / "Working since 09:07" / "Ended at 18:05" | Timer bar, left | e2e: m4 (indirect) |
 | Running timer: project › task, elapsed time, time left or over the estimate | Timer bar | e2e: m3 |
 | Pause | Timer bar | none (server: stop) |
-| Done (complete the running task) | Timer bar | server |
+| Done (complete the running task); "Finished 20m early / 45m over" message for tasks with an estimate | Timer bar; message bottom left | e2e: gate-phase1; server |
 | Revision mode (switch to a revision round and back; "Revision on") | Timer bar → dialog "Revision mode" | e2e: m3 |
 | Edit start time ("When did you start?"), refuses overlaps incl. lunch | Timer bar, clock button | e2e: m3; server |
 | Open the task in Huly | Timer bar, link icon | none |
@@ -125,7 +125,7 @@ Last updated: M5 (Plan board, full Dashboard, hours analytics). This is the comp
 
 | Feature | Where it is now | Test |
 |---|---|---|
-| Project list with search, view switch, completion, Huly link | Projects page | e2e: m2 |
+| Project list with search, List / Board (by status) views, show archived, completion, Huly link | Projects page | e2e: m2 (list) |
 | New project (only a name required; company, category, type, report name, estimate, Huly link optional) | Dialog "New project" | e2e: m2 |
 | Project header: company, category, status, completion, tracked, estimate, remaining, Track project time | Project page | e2e: m2 (completion) |
 | Tasks tab: add task (Enter keeps the field open), "1h 30m" estimates, pasted Huly links | Project page | e2e: m2 |
@@ -175,7 +175,9 @@ Last updated: M5 (Plan board, full Dashboard, hours analytics). This is the comp
 | Report groups (e.g. DM & DevM Blog) | Settings | server |
 | Huly codes → project (BLOG_ → DM Blog) | Settings | server |
 | Theme: auto / light / dark, light from, dark from | Settings | none |
+| Backups: folder, daily time, keep days, Back up now, list, Restore (saves a copy first) | Settings › Backups | e2e: gate-phase1; server |
+| Security: set / change / remove PIN, auto-lock minutes, Lock now; unlock screen | Settings › Security (PIN) | e2e: gate-phase1; server |
 
 ## Not built yet (so not in this list)
 
-Command palette (Ctrl+K), right panel, Board view for projects, Activity and Notes tabs on projects; Calendar, Notes, focus mode, Pomodoro, celebrations, idle detection (Phase 2); Discord sending, Huly live lookup, Google Calendar, voice notes, Gantt (Phase 3).
+Command palette (Ctrl+K), right panel, Activity and Notes tabs on projects; Calendar, Notes, focus mode, Pomodoro, celebrations, idle detection (Phase 2); Discord sending, Huly live lookup, Google Calendar, voice notes, Gantt (Phase 3).

@@ -10,7 +10,7 @@ import { CompanyProvider } from './lib/company.tsx';
 import { router } from './router.tsx';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } },
+  defaultOptions: { queries: { retry: (count, err) => (err as { code?: string }).code !== 'locked' && count < 1, refetchOnWindowFocus: true } },
 });
 
 createRoot(document.getElementById('root')!).render(

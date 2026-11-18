@@ -14,6 +14,7 @@ import {
   validateEntry,
   validateNewStart,
   MINUTE,
+  formatDuration,
   type EntryKind,
   type LeaveDay,
   type ReviewChoice,
@@ -234,7 +235,7 @@ export function completeTask(ctx: Ctx, taskId: string, opts: { completeSubtasks?
     );
     for (const id of ids) stmt.run(done.id, at, at, id);
     interacted(ctx, at);
-    return { completed: ids, stoppedEntryId: stopped };
+    return { completed: ids, stoppedEntryId: stopped, ...completionNote(ctx, taskId) };
   })();
 }
 
@@ -528,4 +529,25 @@ export function timerState(ctx: Ctx) {
     review: timerReview(ctx),
     workdayId,
   };
+}
+
+/**
+ * Acceptance criterion: at completion a task with an estimate says "finished X early" or "X over".
+ * Uses the same time as the timer's countdown: every work, revision and meeting entry on the task itself.
+ */
+export function completionNote(ctx: Ctx, taskId: string): { completionNote: string | null; estimate: { estimateMs: number; actualMs: number } | null } {
+  const t = ctx.db.prepare(`SELECT estimate_minutes FROM tasks WHERE id = ?`).get(taskId) as { estimate_minutes: number | null } | undefined;
+  if (!t || t.estimate_minutes === null) return { completionNote: null, estimate: null };
+  const estimateMs = Number(t.estimate_minutes) * MINUTE;
+  const actualMs = Number(
+    (ctx.db.prepare(`SELECT COALESCE(SUM(ended_at - started_at), 0) AS ms FROM time_entries WHERE task_id = ? AND ended_at IS NOT NULL AND kind IN ('work', 'revision', 'meeting')`).get(taskId) as { ms: number }).ms,
+  );
+  const diff = actualMs - estimateMs;
+  const note =
+    Math.abs(diff) < MINUTE
+      ? 'Finished right on the estimate'
+      : diff < 0
+        ? `Finished ${formatDuration(-diff)} early`
+        : `Finished ${formatDuration(diff)} over the estimate`;
+  return { completionNote: note, estimate: { estimateMs, actualMs } };
 }

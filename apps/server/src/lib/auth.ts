@@ -61,3 +61,10 @@ export class Sessions {
     if (token) this.tokens.delete(token);
   }
 }
+
+/** Removes the PIN (needs the current one). Unlocked sessions stay valid but are no longer needed. */
+export function clearPin(ctx: Ctx, currentPin: string): void {
+  if (!pinIsSet(ctx)) return;
+  if (!verifyPin(ctx, currentPin)) throw new RuleError('pin_wrong', 'The current PIN is wrong.');
+  ctx.db.prepare(`DELETE FROM app_state WHERE key = ?`).run(KEY);
+}

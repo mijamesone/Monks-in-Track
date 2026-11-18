@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Field, Select, TextInput, TimeInput, parseClock } from '../components/fields.tsx';
 import { Button, Card, CompanyDot, EmptyState, Label, StatusChip, companyColor } from '../components/ui.tsx';
 import { useCatalog, useMutate, useProjects } from '../lib/queries.ts';
+import { Backups, Security } from '../components/SettingsSystem.tsx';
 import type { Company, Status } from '../lib/types.ts';
 
-type Section = 'companies' | 'statuses' | 'groups' | 'huly' | 'theme';
+type Section = 'companies' | 'statuses' | 'groups' | 'huly' | 'theme' | 'backups' | 'security';
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'companies', label: 'Companies' },
   { id: 'statuses', label: 'Statuses and report wording' },
   { id: 'groups', label: 'Report groups' },
   { id: 'huly', label: 'Huly codes' },
   { id: 'theme', label: 'Theme' },
+  { id: 'backups', label: 'Backups' },
+  { id: 'security', label: 'Security (PIN)' },
 ];
 
 export function Settings() {
@@ -31,7 +34,7 @@ export function Settings() {
               {s.label}
             </button>
           ))}
-          <p className="mt-3 hidden px-3 text-xs text-text-3 md:block">Workday, leave, timer, sounds and backups come next.</p>
+          <p className="mt-3 hidden px-3 text-xs text-text-3 md:block">Workday hours, lunch times, leave and sounds are not editable here yet.</p>
         </nav>
         <div className="min-w-0 flex-1">
           {section === 'companies' && <Companies />}
@@ -39,6 +42,8 @@ export function Settings() {
           {section === 'groups' && <Groups />}
           {section === 'huly' && <HulyCodes />}
           {section === 'theme' && <Theme />}
+          {section === 'backups' && <Backups />}
+          {section === 'security' && <Security />}
         </div>
       </div>
     </div>

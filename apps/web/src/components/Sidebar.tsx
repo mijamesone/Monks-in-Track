@@ -34,6 +34,7 @@ export function Sidebar() {
             <CompanyDot color={selectedIndex >= 0 ? companyColor(companies[selectedIndex], selectedIndex) : 'var(--mt-text-3)'} />
           </span>
           <select
+            aria-label="Company"
             value={companyId}
             onChange={(e) => setCompanyId(e.target.value)}
             className="min-h-10 w-full appearance-none rounded-field border border-line bg-surface-2 pr-8 pl-8 text-[13px] font-medium text-text"

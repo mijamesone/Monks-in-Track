@@ -26,6 +26,8 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
     throw new ApiError(0, 'offline', 'Cannot reach the MonksTracker server on this computer.');
   }
   const data = (await res.json().catch(() => null)) as { error?: { code: string; message: string } } | null;
+  // The PIN lock: tell the app to show the unlock screen.
+  if (res.status === 401 && data?.error?.code === 'locked') window.dispatchEvent(new Event('mt:locked'));
   if (!res.ok) throw new ApiError(res.status, data?.error?.code ?? `http_${res.status}`, data?.error?.message ?? res.statusText);
   return data as T;
 }

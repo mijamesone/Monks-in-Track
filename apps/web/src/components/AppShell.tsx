@@ -9,6 +9,8 @@ import { useEffect } from 'react';
 import { unlockAudioOnFirstInteraction } from '../lib/sound.ts';
 import { TimerBar } from './TimerBar.tsx';
 import { WorkdayFlowsProvider } from './WorkdayFlows.tsx';
+import { Toaster } from './Toaster.tsx';
+import { LockScreen } from './LockScreen.tsx';
 
 export function AppShell() {
   const catalog = useCatalog();
@@ -17,7 +19,7 @@ export function AppShell() {
   useHeartbeat();
   useEffect(unlockAudioOnFirstInteraction, []);
   const path = useRouterState({ select: (s) => s.location.pathname.split('/').slice(0, 3).join('/') });
-  const offline = catalog.isError && timer.isError;
+  const offline = catalog.isError && timer.isError && (catalog.error as { code?: string } | null)?.code !== 'locked';
 
   return (
     <MotionConfig reducedMotion="user">
@@ -45,6 +47,8 @@ export function AppShell() {
       </div>
       <QuickAdd />
       <LunchFlow />
+      <Toaster />
+      <LockScreen />
       </WorkdayFlowsProvider>
     </MotionConfig>
   );

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { api, post, type ApiError } from './api.ts';
+import { announce } from './toast.ts';
 import type { Catalog, Entry, ProjectSummary, ReportType, SavedReport, Task, TimerState, WorkdayReview, WorkdaySummary } from './types.ts';
 
 export const keys = {
@@ -91,6 +92,7 @@ export function useAction<TBody, TResult>(path: string | ((b: TBody) => string),
       void qc.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: opts.onError,
+    onSuccess: announce,
   });
 }
 
@@ -170,6 +172,7 @@ export function useMutate<TVars>(method: 'POST' | 'PATCH' | 'PUT' | 'DELETE', pa
   const qc = useQueryClient();
   return useMutation<unknown, ApiError, TVars>({
     mutationFn: (v: TVars) => api(path(v), { method, body: method === 'DELETE' ? undefined : body(v) }),
+    onSuccess: announce,
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['projects'] });
       void qc.invalidateQueries({ queryKey: ['plan'] });

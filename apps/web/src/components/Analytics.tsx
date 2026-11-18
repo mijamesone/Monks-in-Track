@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../lib/api.ts';
 import { useCompany } from '../lib/company.tsx';
 import { duration, signedMinutes } from '../lib/format.ts';
@@ -60,6 +60,11 @@ export function Analytics() {
   const [period, setPeriod] = useState<Period>('week');
   const [from, setFrom] = useState(() => startOf('week', Date.now()));
   const [company, setCompany] = useState(globalCompany === 'all' ? '' : globalCompany);
+  // The company switcher filters Reports too (acceptance criterion); the select here can still narrow further.
+  useEffect(() => {
+    setCompany(globalCompany === 'all' ? '' : globalCompany);
+    setProject('');
+  }, [globalCompany]);
   const [project, setProject] = useState('');
   const [category, setCategory] = useState('');
   const [tag, setTag] = useState('');

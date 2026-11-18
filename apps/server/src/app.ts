@@ -14,7 +14,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { z } from 'zod';
 import { MINUTE, RuleError } from '@monkstracker/core';
 import { ConflictError, NotFoundError, type Ctx } from './lib/context.ts';
-import { Sessions, pinIsSet, setPin, verifyPin } from './lib/auth.ts';
+import { Sessions, clearPin, pinIsSet, setPin, verifyPin } from './lib/auth.ts';
 import * as S from './services/structure.ts';
 import * as T from './services/time.ts';
 import * as W from './services/workday.ts';
@@ -22,7 +22,7 @@ import * as R from './services/reports.ts';
 import * as P from './services/plan.ts';
 import * as C from './services/catalog.ts';
 import { analytics } from './services/analytics.ts';
-import { backupNow } from './services/backup.ts';
+import { backupNow, listBackups, restoreBackup } from './services/backup.ts';
 
 const id = z.string().min(1);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -138,6 +138,12 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
     const body = z.object({ pin: z.string(), currentPin: z.string().optional() }).parse(await c.req.json());
     setPin(ctx, body.pin, body.currentPin);
     return c.json({ pinSet: true });
+  });
+  app.delete('/api/auth/pin', async (c) => {
+    if (pinIsSet(ctx) && !sessions.check(getCookie(c, 'mt_session'), ctx.now())) return c.json({ error: { code: 'locked', message: 'Unlock first.' } }, 401);
+    const body = z.object({ currentPin: z.string() }).parse(await c.req.json().catch(() => ({})));
+    clearPin(ctx, body.currentPin);
+    return c.json({ pinSet: false });
   });
 
   const body = async <T extends z.ZodTypeAny>(c: Context, schema: T): Promise<z.infer<T>> => schema.parse(await c.req.json().catch(() => ({})));
@@ -324,6 +330,8 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
     return c.json(analytics(ctx, q));
   });
   app.post('/api/backup', async (c) => c.json(await backupNow(ctx)));
+  app.get('/api/backups', (c) => c.json(listBackups(ctx)));
+  app.post('/api/backups/restore', async (c) => c.json(await restoreBackup(ctx, (await body(c, z.object({ name: z.string().min(1).max(200) }))).name)));
 
   if (opts.webRoot) {
     const root = opts.webRoot;
