@@ -28,6 +28,25 @@ export const useToday = () => useQuery({ queryKey: keys.today, queryFn: () => ap
 export const usePlan = (bucket: 'backlog' | 'this_week' | 'today', enabled = true) =>
   useQuery({ queryKey: ['plan', bucket] as const, queryFn: () => api<Task[]>(`/api/plan/${bucket}`), enabled });
 
+export interface PlanBoard {
+  columns: Record<'backlog' | 'this_week' | 'today', Task[]>;
+  parents: Record<string, string>;
+  subtaskCounts: Record<string, number>;
+}
+export const usePlanBoard = (companyId?: string) =>
+  useQuery({ queryKey: ['plan', 'board', companyId ?? 'all'] as const, queryFn: () => api<PlanBoard>(`/api/plan${companyId ? `?companyId=${companyId}` : ''}`) });
+
+export interface DashboardData {
+  revisionsDue: { id: string; projectId: string; projectName: string; number: number; title: string; status: string; taskId: string | null }[];
+  recentTasks: (Task & { lastTrackedAt: number })[];
+  deadlines: { kind: 'task' | 'project'; id: string; name: string; projectName: string; projectId: string; date: string; overdue: boolean }[];
+  completedToday: Task[];
+  productivity: { todayTrackedMs: number; weekTrackedMs: number; completedToday: number };
+  alerts: { overlapsToday: number; todayEstimateMinutes: number; overdue: number };
+}
+export const useDashboard = (companyId?: string) =>
+  useQuery({ queryKey: ['plan', 'dashboard', companyId ?? 'all'] as const, queryFn: () => api<DashboardData>(`/api/dashboard${companyId ? `?companyId=${companyId}` : ''}`), refetchInterval: 60_000 });
+
 export const useWorkdayReview = (workdayId: string | null) =>
   useQuery({ queryKey: ['workday-review', workdayId] as const, queryFn: () => api<WorkdayReview>(`/api/workday/${workdayId}/review`), enabled: !!workdayId });
 

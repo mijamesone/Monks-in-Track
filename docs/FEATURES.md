@@ -6,13 +6,13 @@ Every feature the app has today, where it currently lives on screen, and whether
 
 **Test column.** `e2e: m4` means a step in `e2e/suites/m4-workday.mjs` uses this feature through the real interface. `server` means it is covered by the API tests only (`pnpm test`). `none` means no automated check yet: verify it by hand after a redesign.
 
-Last updated: M4 (Start/End Workday flows).
+Last updated: M5 (Plan board, full Dashboard, hours analytics). This is the complete Phase 1 feature set.
 
 ## App frame
 
 | Feature | Where it is now | Test |
 |---|---|---|
-| Navigation: Dashboard, Plan, Projects, Time, Calendar, Notes, Reports, Settings | Left sidebar | e2e: m2, m3, m4 (by URL and links) |
+| Navigation: Dashboard, Plan, Projects, Time, Calendar, Notes, Reports, Settings | Left sidebar | e2e: m2–m5 (by URL and links) |
 | Company switcher (All Companies / one company filter) | Left sidebar, top | none |
 | Quick add button and the **Q** shortcut | Sidebar bottom; key Q anywhere | e2e: m2 |
 | Theme by time of day (light from / dark from), or fixed light/dark | Automatic; set in Settings → Theme | none |
@@ -43,6 +43,13 @@ Last updated: M4 (Start/End Workday flows).
 | Three states: before work, during work, after work | Dashboard | e2e: m4 |
 | Before work: Start Workday button, carried-over tasks preview | Dashboard | e2e: m4 |
 | During work: active timer card with estimate progress bar and Pause | Dashboard | none |
+| Before work: From This Week card, add a task to Today with one click | Dashboard | e2e: m5 |
+| Before work: Deadlines, Alerts, Today's meetings (placeholder until Phase 3) | Dashboard | e2e: m5 |
+| During work: Quick switch (recent open tasks, one-click timer switch) | Dashboard | e2e: m5 |
+| During work: Revisions due (open rounds across projects) | Dashboard | e2e: m5 (present); server |
+| During work: Productivity (tracked today, this week, focus done) | Dashboard | e2e: m5 |
+| During work: Alerts (overlapping entries, Today over capacity, overdue deadlines, timer over estimate, morning message not copied) | Dashboard | e2e: m5 (morning); server |
+| During work: Completed today, Deadlines this week, Quick notes (placeholder until Phase 2) | Dashboard | e2e: m5 (present); server |
 | During work: workday card (length, check-in with **Edit**, tracked time) | Dashboard, right card | e2e: m4 (edit in wizard) |
 | During work: "Morning message copied at …" / Open, or "not copied yet" / Morning setup | Workday card | e2e: m4 |
 | During work: End Workday | Workday card | e2e: m4 |
@@ -51,6 +58,7 @@ Last updated: M4 (Start/End Workday flows).
 | After work: workday, tracked, lunch and breaks, untracked, balance today and total | Dashboard | e2e: m4 |
 | After work: Write / Open evening message | Dashboard | e2e: m4 |
 | After work: Reopen workday | Dashboard | e2e: m4 |
+| After work: Completed today, For tomorrow (open focus tasks), Today's messages | Dashboard | none (server) |
 
 ## Start Workday wizard (flow 1)
 
@@ -97,6 +105,22 @@ Last updated: M4 (Start/End Workday flows).
 | Off ends lunch and resumes the paused task | Alarm dialog | server |
 | Short break uses the break length (10 min default) | Timer bar | server |
 
+## Plan board
+
+| Feature | Where it is now | Test |
+|---|---|---|
+| Three columns: Backlog, This Week, Today, across projects (company switcher applies) | Plan page | e2e: m5 |
+| Card: company colour, parent › name for subtasks, project, status, Huly key, open subtasks, scheduled date, estimate | Plan cards | e2e: m5 |
+| Today total against your working hours (9h day − 1h lunch = 8h); amber when over | Plan header | e2e: m5 |
+| Drag between columns and reorder (top of Today = first focus) | Plan | e2e: m5 |
+| Multi-select and move together | Plan, selection toolbar | e2e: m5 |
+| More menu: move to another column, move up/down, schedule for a date, open in Huly | Plan card | e2e: m5 (move down, move column) |
+| Moving a task with open subtasks asks whether to move them too | Plan | e2e: m5; server |
+| Start timer and mark done from a card | Plan card | none |
+| Filter by task, project or Huly key | Plan header | e2e: m5 |
+| Add to a column (opens Quick add set to that column) | Bottom of each column | e2e: m5 |
+| A failed move puts the board back and says so | Plan | none |
+
 ## Projects
 
 | Feature | Where it is now | Test |
@@ -117,6 +141,7 @@ Last updated: M4 (Start/End Workday flows).
 | Feature | Where it is now | Test |
 |---|---|---|
 | Week navigator (previous, this week, next), kind filter | Time page header | e2e: m3 (view) |
+| Opened from Reports: that week, only that project, with a chip to show all | Time page header | e2e: m5 |
 | Entries grouped by day with day totals; overlaps highlighted | Time page | e2e: m3 |
 | Add forgotten time (project, task, kind, revision round, date, start, end, note) | Dialog "Add time" | e2e: m3 |
 | Inline 24-hour start/end editing | Entry rows | e2e: m3 |
@@ -130,7 +155,16 @@ Last updated: M4 (Start/End Workday flows).
 | Feature | Where it is now | Test |
 |---|---|---|
 | Message history: every copied message, grouped by day, filter by type, Edited badge, Show all, Copy again | Reports page | e2e: m4 |
-| Hours analytics | Reports page (placeholder until M5) | — |
+| Period: day / week (Monday start) / month, previous / next / this period | Reports → Hours | e2e: m5 |
+| Filters: company, project, category, tag | Reports → Hours | e2e: m5 (category); server (tag) |
+| Totals: workday time, tracked work, lunch and breaks, revision share, completed and still planned, finished tasks over estimate | Reports → Hours | e2e: m5 |
+| Tracked work per day (click a day to open that week in Time) | Reports → Hours | e2e: m5 |
+| By company, Client vs internal, By project, Top tasks | Reports → Hours | e2e: m5 |
+| Clicking a project or task bar opens its time entries in Time | Reports → Time with "Only {project}" | e2e: m5 |
+| Kind of work: first-pass work vs revisions vs meetings | Reports → Hours | none (server) |
+| Time balance per day and running total | Reports → Hours | e2e: m5 |
+| Estimate vs actual for finished tasks | Reports → Hours | server |
+| Show table for every chart | Each chart | e2e: m5 (daily chart) |
 
 ## Settings
 
@@ -144,4 +178,4 @@ Last updated: M4 (Start/End Workday flows).
 
 ## Not built yet (so not in this list)
 
-Plan board, full analytics (M5); Calendar, Notes, focus mode, Pomodoro, celebrations, idle detection (Phase 2); Discord sending, Huly live lookup, Google Calendar, voice notes, Gantt (Phase 3).
+Command palette (Ctrl+K), right panel, Board view for projects, Activity and Notes tabs on projects; Calendar, Notes, focus mode, Pomodoro, celebrations, idle detection (Phase 2); Discord sending, Huly live lookup, Google Calendar, voice notes, Gantt (Phase 3).

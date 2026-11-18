@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy } from 'lucide-react';
 import { Button, Card, Chip, EmptyState, Label } from '../components/ui.tsx';
 import { Select } from '../components/fields.tsx';
+import { Analytics } from '../components/Analytics.tsx';
 import { timeOfDay } from '../lib/format.ts';
 import { useReports } from '../lib/queries.ts';
 import type { ReportType, SavedReport } from '../lib/types.ts';
@@ -30,7 +31,7 @@ export function Reports() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <h1 className="m-0 font-head text-[28px] font-extrabold tracking-[-0.02em]">Reports</h1>
-      <EmptyState title="Hours analytics arrive in M5">Daily, weekly and monthly hours by company, project and category.</EmptyState>
+      <Analytics />
 
       <section aria-labelledby="history-title" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-3">

@@ -82,6 +82,13 @@
   --mt-dur: 240ms;
   --mt-dur-slow: 400ms;
   --mt-theme-fade: 600ms;
+  /* Charts (validated with the dataviz checker: categorical CVD ΔE ≥ 9, values always labelled) */
+  --mt-viz-1: #2a78d6; /* work */
+  --mt-viz-2: #eb6834; /* revision */
+  --mt-viz-3: #1baf7a; /* meeting (below 3:1 on white: always shown with a visible label) */
+  --mt-viz-pos: #2a78d6; /* time balance above expected */
+  --mt-viz-neg: #e34948; /* time balance below expected */
+  --mt-viz-bar: var(--mt-accent); /* single-series magnitude bars */
 }
 
 [data-theme='dark'] {
@@ -134,4 +141,10 @@
   --mt-company-2: #2cfa92;
 
   --mt-overlay: rgba(0, 0, 0, 0.6);
+  --mt-viz-1: #3987e5;
+  --mt-viz-2: #d95926;
+  --mt-viz-3: #199e70;
+  --mt-viz-pos: #3987e5;
+  --mt-viz-neg: #e66767;
+  --mt-viz-bar: var(--mt-accent);
 }

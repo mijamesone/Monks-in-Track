@@ -120,6 +120,8 @@ export interface Task {
   name: string;
   statusId: string;
   planBucket: Bucket;
+  plannedDate?: string | null;
+  dueDate?: string | null;
   estimateMinutes: number | null;
   hulyUrl: string | null;
   hulyKey: string | null;

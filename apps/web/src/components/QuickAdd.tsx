@@ -32,7 +32,12 @@ export function QuickAdd() {
         setOpen(true);
       }
     };
-    const onOpen = () => setOpen(true);
+    // Other screens can open Quick add for a column: dispatchEvent(new CustomEvent('mt:quick-add', { detail: { bucket } })).
+    const onOpen = (e: Event) => {
+      const b = (e as CustomEvent<{ bucket?: Bucket } | undefined>).detail?.bucket;
+      if (b) setBucket(b);
+      setOpen(true);
+    };
     window.addEventListener('keydown', onKey);
     window.addEventListener('mt:quick-add', onOpen);
     return () => {

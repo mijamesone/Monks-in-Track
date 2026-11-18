@@ -7,6 +7,19 @@ import { useCompany } from '../lib/company.tsx';
 import { clock, duration, greeting, longDate, signedMinutes, timeOfDay, MINUTE } from '../lib/format.ts';
 import { useAction, useCatalog, useNow, useProjects, useReports, useTimer, useToday, useWorkday } from '../lib/queries.ts';
 import { CheckInEditor, useWorkdayFlows } from '../components/WorkdayFlows.tsx';
+import {
+  AlertsCard,
+  ComingCard,
+  CompletedTodayCard,
+  DeadlinesCard,
+  ProductivityCard,
+  QuickSwitchCard,
+  RevisionsDueCard,
+  SuggestionsCard,
+  TodaysMessagesCard,
+  TomorrowCard,
+  useDashboardData,
+} from '../components/DashboardCards.tsx';
 import type { ProjectSummary, Task, WorkdaySummary } from '../lib/types.ts';
 
 const enter = { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 }, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } };
@@ -58,8 +71,25 @@ function BeforeWork({ carryOver }: { carryOver: Task[] }) {
           Start Workday
         </Button>
       </Card>
-      <FocusList title="Carried over from yesterday" tasks={carryOver} emptyText="Nothing unfinished from yesterday." />
+      <BeforeCards carryOver={carryOver} />
     </>
+  );
+}
+
+function BeforeCards({ carryOver }: { carryOver: Task[] }) {
+  const dash = useDashboardData();
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="flex flex-col gap-6 lg:col-span-8">
+        <FocusList title="Carried over from yesterday" tasks={carryOver} emptyText="Nothing unfinished from yesterday." />
+        <SuggestionsCard />
+      </div>
+      <div className="flex flex-col gap-6 lg:col-span-4">
+        <AlertsCard data={dash.data} morningCopied={null} workdayOpen={false} />
+        <DeadlinesCard data={dash.data} />
+        <ComingCard title="Today's meetings">Google Calendar meetings with Join buttons arrive in Phase 3.</ComingCard>
+      </div>
+    </div>
   );
 }
 
@@ -73,6 +103,7 @@ function DuringWork({ now }: { now: number }) {
   const running = timer.data?.running ?? null;
   const tracked = (wd?.trackedMs ?? 0) + (running ? Math.max(0, now - Math.max(running.startedAt, timer.data?.now ?? now)) : 0);
   const morningCopied = morning.data?.[0] ?? null;
+  const dash = useDashboardData();
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -105,8 +136,19 @@ function DuringWork({ now }: { now: number }) {
           End Workday
         </Button>
       </Card>
-      <div className="lg:col-span-12">
-        <FocusList title="Today's focus" tasks={today.data ?? []} emptyText="Nothing planned for today yet. Plan arrives in the next milestone." />
+      <div className="flex flex-col gap-6 lg:col-span-8">
+        <FocusList title="Today's focus" tasks={today.data ?? []} emptyText="Nothing planned for today yet. Plan your day on the Plan screen." />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <QuickSwitchCard data={dash.data} />
+          <RevisionsDueCard data={dash.data} />
+        </div>
+      </div>
+      <div className="flex flex-col gap-6 lg:col-span-4">
+        <ProductivityCard data={dash.data} />
+        <AlertsCard data={dash.data} morningCopied={morning.isSuccess ? !!morningCopied : null} workdayOpen />
+        <CompletedTodayCard data={dash.data} />
+        <DeadlinesCard data={dash.data} />
+        <ComingCard title="Quick notes">Quick notes attached to projects and tasks arrive in Phase 2.</ComingCard>
       </div>
     </div>
   );
@@ -249,32 +291,46 @@ function AfterWork({ summary }: { summary: WorkdaySummary }) {
     </div>
   );
   return (
-    <Card className="flex flex-col gap-5 p-7">
-      <Label>
-        Day complete · {timeOfDay(s.workday.checkInAt)} to {s.workday.checkOutAt ? timeOfDay(s.workday.checkOutAt) : '–'}
-      </Label>
-      <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-        {stat(duration(s.durationMs), 'workday')}
-        {stat(duration(s.trackedMs), 'tracked work')}
-        {stat(duration(s.breakMs), 'lunch and breaks')}
-        {stat(duration(s.untrackedMs), 'untracked')}
-        {stat(signedMinutes(s.balanceTodayMinutes), `balance today (${signedMinutes(s.runningBalanceMinutes)} total)`)}
-      </div>
-      <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4 text-sm">
-        <span className="text-text-2">{copied ? `Evening message copied at ${timeOfDay(copied.createdAt)}` : 'Evening message not copied yet'}</span>
-        <Button size="sm" variant={copied ? 'ghost' : 'primary'} onClick={() => flows.openMessage('evening', s.workday.id)}>
-          {copied ? 'Open evening message' : 'Write evening message'}
-        </Button>
-        <Button
-          size="sm"
-          className="ml-auto"
-          onClick={() => window.confirm('Reopen today’s workday? Its time balance is removed until you end it again.') && reopen.mutate({})}
-          disabled={reopen.isPending}
-        >
-          Reopen workday
-        </Button>
-        {reopen.error && <span className="w-full text-danger">{reopen.error.message}</span>}
-      </div>
-    </Card>
+    <>
+      <Card className="flex flex-col gap-5 p-7">
+        <Label>
+          Day complete · {timeOfDay(s.workday.checkInAt)} to {s.workday.checkOutAt ? timeOfDay(s.workday.checkOutAt) : '–'}
+        </Label>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
+          {stat(duration(s.durationMs), 'workday')}
+          {stat(duration(s.trackedMs), 'tracked work')}
+          {stat(duration(s.breakMs), 'lunch and breaks')}
+          {stat(duration(s.untrackedMs), 'untracked')}
+          {stat(signedMinutes(s.balanceTodayMinutes), `balance today (${signedMinutes(s.runningBalanceMinutes)} total)`)}
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4 text-sm">
+          <span className="text-text-2">{copied ? `Evening message copied at ${timeOfDay(copied.createdAt)}` : 'Evening message not copied yet'}</span>
+          <Button size="sm" variant={copied ? 'ghost' : 'primary'} onClick={() => flows.openMessage('evening', s.workday.id)}>
+            {copied ? 'Open evening message' : 'Write evening message'}
+          </Button>
+          <Button
+            size="sm"
+            className="ml-auto"
+            onClick={() => window.confirm('Reopen today’s workday? Its time balance is removed until you end it again.') && reopen.mutate({})}
+            disabled={reopen.isPending}
+          >
+            Reopen workday
+          </Button>
+          {reopen.error && <span className="w-full text-danger">{reopen.error.message}</span>}
+        </div>
+      </Card>
+      <AfterCards workdayId={s.workday.id} />
+    </>
+  );
+}
+
+function AfterCards({ workdayId }: { workdayId: string }) {
+  const dash = useDashboardData();
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <CompletedTodayCard data={dash.data} />
+      <TomorrowCard />
+      <TodaysMessagesCard workdayId={workdayId} />
+    </div>
   );
 }

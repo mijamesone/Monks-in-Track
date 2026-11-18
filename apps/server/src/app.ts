@@ -19,6 +19,7 @@ import * as S from './services/structure.ts';
 import * as T from './services/time.ts';
 import * as W from './services/workday.ts';
 import * as R from './services/reports.ts';
+import * as P from './services/plan.ts';
 import * as C from './services/catalog.ts';
 import { analytics } from './services/analytics.ts';
 import { backupNow } from './services/backup.ts';
@@ -165,6 +166,12 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
   app.put('/api/huly-codes/:code', async (c) => c.json(S.setHulyCode(ctx, c.req.param('code'), (await body(c, z.object({ projectId: id.nullable() }))).projectId)));
 
   // ── tasks ──
+  const planBucket = z.enum(['backlog', 'this_week', 'today']);
+  app.get('/api/plan', (c) => c.json(P.planBoard(ctx, c.req.query('companyId') || undefined)));
+  app.post('/api/plan/move', async (c) =>
+    c.json(P.movePlan(ctx, await body(c, z.object({ taskIds: z.array(id).min(1).max(200), bucket: planBucket, index: z.number().int().min(0).optional(), beforeTaskId: id.nullable().optional(), withSubtasks: z.boolean().optional() })))),
+  );
+  app.get('/api/dashboard', (c) => c.json(P.dashboard(ctx, c.req.query('companyId') || undefined)));
   app.get('/api/plan/:bucket', (c) => c.json(S.listBucket(ctx, bucket.parse(c.req.param('bucket')), c.req.query('companyId'))));
   app.post('/api/tasks', async (c) => c.json(S.createTask(ctx, await body(c, taskCreate)), 201));
   app.patch('/api/tasks/:id', async (c) => c.json(S.updateTask(ctx, c.req.param('id'), await body(c, taskPatch))));
@@ -310,7 +317,10 @@ export function createApp(ctx: Ctx, opts: AppOptions = {}) {
 
   // ── analytics and backup ──
   app.get('/api/analytics', (c) => {
-    const q = z.object({ from: z.coerce.number().int(), to: z.coerce.number().int(), companyId: id.optional(), projectId: id.optional(), categoryId: id.optional() }).parse(c.req.query());
+    const q = z
+      .object({ from: z.coerce.number().int(), to: z.coerce.number().int(), companyId: id.optional(), projectId: id.optional(), categoryId: id.optional(), tagId: id.optional() })
+      .refine((v) => v.to > v.from && v.to - v.from <= 400 * 86_400_000, 'The period must be positive and at most about a year.')
+      .parse(c.req.query());
     return c.json(analytics(ctx, q));
   });
   app.post('/api/backup', async (c) => c.json(await backupNow(ctx)));

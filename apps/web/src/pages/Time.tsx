@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Pencil, Play, Plus, Scissors, Square, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -34,7 +34,13 @@ const dateInput = (ts: number) => {
 };
 
 export function Time() {
-  const [week, setWeek] = useState(() => mondayOf(Date.now()));
+  const search = useSearch({ from: '/time' });
+  const navigate = useNavigate({ from: '/time' });
+  const [week, setWeek] = useState(() => (search.week ? mondayOf(search.week) : mondayOf(Date.now())));
+  const projectFilter = search.projectId ?? null;
+  useEffect(() => {
+    if (search.week) setWeek(mondayOf(search.week));
+  }, [search.week]);
   const [kind, setKind] = useState<'all' | 'work' | 'revision' | 'meeting' | 'breaks'>('all');
   const [editing, setEditing] = useState<EntryWithContext | 'new' | null>(null);
   const [splitting, setSplitting] = useState<EntryWithContext | null>(null);
@@ -65,6 +71,7 @@ export function Time() {
   const companies = catalog.data?.companies ?? [];
   const list = (entries.data ?? []).filter((e) => {
     if (companyId !== 'all' && e.context?.companyId !== companyId) return false;
+    if (projectFilter && e.projectId !== projectFilter) return false;
     if (kind === 'breaks') return isBreak(e.kind);
     return kind === 'all' || e.kind === kind;
   });
@@ -126,6 +133,14 @@ export function Time() {
           <span className="text-sm text-text-2">
             {weekLabel} · tracked <span className="num font-semibold text-text">{duration(weekTracked)}</span>
           </span>
+          {projectFilter && (
+            <span className="mt-1 inline-flex items-center gap-2 self-start rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-ink">
+              Only {(entries.data ?? []).find((e) => e.projectId === projectFilter)?.context?.projectName ?? 'one project'}
+              <button type="button" aria-label="Show all projects" className="hover:underline" onClick={() => void navigate({ search: {} })}>
+                ✕
+              </button>
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" aria-label="Previous week" onClick={() => setWeek(week - 7 * DAY)}>
