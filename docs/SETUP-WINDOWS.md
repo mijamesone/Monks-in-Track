@@ -62,9 +62,9 @@ pnpm dist:win      # builds the server and web app, then apps/desktop/release/Mo
 
 Run the desktop app from source with `pnpm build` and then `pnpm --filter @monkstracker/desktop start`.
 
-To publish an update that installed copies pick up by themselves: raise `version` in `apps/desktop/package.json`, build, and
-upload `MonksTracker-Setup-<version>.exe`, its `.blockmap` and `latest.yml` to a GitHub release on `mijamesone/Monks-in-Track`
-(`node apps/desktop/build-win.cjs --publish` does this when a `GH_TOKEN` is set).
+To publish a version that installed copies pick up by themselves: raise `version` in `apps/desktop/package.json`, push,
+then on GitHub open **Actions → Release Windows app → Run workflow**. It builds the installer on Windows, runs the tests there,
+checks the app starts, and publishes the release (`.github/workflows/release-windows.yml`).
 
 ## The manual way (no installer)
 
